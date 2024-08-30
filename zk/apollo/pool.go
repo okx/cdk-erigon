@@ -126,3 +126,13 @@ func (cfg *ApolloConfig) CheckFreeGasExAddr(localFreeGasExAddrs []string, addr l
 	}
 	return containsAddress(localFreeGasExAddrs, addr)
 }
+
+func (cfg *ApolloConfig) GetEnableFreeGasList(localEnableFreeGasList bool) bool {
+	cfg.RLock()
+	defer cfg.RUnlock()
+
+	if cfg.isPoolEnabled() {
+		return cfg.EthCfg.DeprecatedTxPool.EnableFreeGasList
+	}
+	return localEnableFreeGasList
+}

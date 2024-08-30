@@ -20,6 +20,7 @@ import (
 	"github.com/gateway-fm/cdk-erigon-lib/kv/remotedbserver"
 	"github.com/gateway-fm/cdk-erigon-lib/txpool/txpoolcfg"
 	"github.com/gateway-fm/cdk-erigon-lib/types"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/ledgerwatch/erigon/cmd/rpcdaemon/rpcdaemontest"
 	common2 "github.com/ledgerwatch/erigon/common"
 	"github.com/ledgerwatch/erigon/eth/ethconfig"
@@ -66,6 +67,8 @@ var (
 	freeGasExAddrs       []string
 	freeGasCountPerAddr  uint64
 	freeGasLimit         uint64
+	enableFreeGasList    bool
+	freeGasList          string
 )
 
 func init() {
@@ -99,6 +102,8 @@ func init() {
 	rootCmd.Flags().StringSliceVar(&freeGasExAddrs, utils.TxPoolFreeGasExAddrs.Name, ethconfig.DeprecatedDefaultTxPoolConfig.FreeGasExAddrs, utils.TxPoolFreeGasExAddrs.Usage)
 	rootCmd.PersistentFlags().Uint64Var(&freeGasCountPerAddr, utils.TxPoolFreeGasCountPerAddr.Name, ethconfig.DeprecatedDefaultTxPoolConfig.FreeGasCountPerAddr, utils.TxPoolFreeGasCountPerAddr.Usage)
 	rootCmd.PersistentFlags().Uint64Var(&freeGasLimit, utils.TxPoolFreeGasLimit.Name, ethconfig.DeprecatedDefaultTxPoolConfig.FreeGasLimit, utils.TxPoolFreeGasLimit.Usage)
+	rootCmd.Flags().BoolVar(&enableFreeGasList, utils.TxPoolEnableFreeGasList.Name, ethconfig.DeprecatedDefaultTxPoolConfig.EnableFreeGasList, utils.TxPoolEnableFreeGasList.Usage)
+	rootCmd.PersistentFlags().StringVar(&freeGasList, utils.TxPoolFreeGasList.Name, "", utils.TxPoolFreeGasList.Usage)
 }
 
 var rootCmd = &cobra.Command{
@@ -203,6 +208,12 @@ func doTxpool(ctx context.Context) error {
 	}
 	ethCfg.DeprecatedTxPool.FreeGasCountPerAddr = freeGasCountPerAddr
 	ethCfg.DeprecatedTxPool.FreeGasLimit = freeGasLimit
+	ethCfg.DeprecatedTxPool.EnableFreeGasList = enableFreeGasList
+	if len(freeGasList) > 0 {
+		if err := jsoniter.UnmarshalFromString(freeGasList, &ethCfg.DeprecatedTxPool.FreeGasList); err != nil {
+			panic("unable to unmarshal freeGasList:" + err.Error())
+		}
+	}
 
 	newTxs := make(chan types.Announcements, 1024)
 	defer close(newTxs)
