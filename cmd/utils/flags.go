@@ -360,6 +360,11 @@ var (
 		Usage: "Upstream L2 node RPC endpoint",
 		Value: "",
 	}
+	L2RpcLimitFlag = cli.Int64Flag{ // For X Layer
+		Name:  "zkevm.l2-sequencer-rpc-limit",
+		Usage: "The limit of call L2 seq RPC endpoint",
+		Value: 0,
+	}
 	L2DataStreamerUrlFlag = cli.StringFlag{
 		Name:  "zkevm.l2-datastreamer-url",
 		Usage: "L2 datastreamer endpoint",

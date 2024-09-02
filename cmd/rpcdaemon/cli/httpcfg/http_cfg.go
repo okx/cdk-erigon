@@ -76,4 +76,5 @@ type HttpCfg struct {
 	// For X Layer
 	HttpApiKeys     string
 	MethodRateLimit string
+	L2RpcLimit      int64
 }

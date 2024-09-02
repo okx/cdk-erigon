@@ -3,9 +3,11 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"sync/atomic"
 
 	"github.com/ledgerwatch/erigon/zkevm/jsonrpc/types"
 )
@@ -30,6 +32,8 @@ type HTTPError struct {
 func (e *HTTPError) Error() string {
 	return fmt.Sprintf("invalid status code, expected: %d, found: %d", http.StatusOK, e.StatusCode)
 }
+
+var l2RpcCallCount atomic.Int64
 
 // JSONRPCCall executes a 2.0 JSON RPC HTTP Post Request to the provided URL with
 // the provided method and parameters, which is compatible with the Ethereum
@@ -146,4 +150,20 @@ func JSONRPCBatchCall(url string, methods []string, parameterGroups ...[]interfa
 	}
 
 	return batchResponse, nil
+}
+
+// For X Layer
+func JSONRPCCallWhitLimit(l2RpcLimit types.L2RpcLimit, url, method string, parameters ...interface{}) (types.Response, error) {
+	if url == l2RpcLimit.L2Url {
+		if l2RpcLimit.CallLimit > 0 && l2RpcCallCount.Load() >= l2RpcLimit.CallLimit {
+			return types.Response{}, errors.New("rpc is too busy")
+		}
+
+		l2RpcCallCount.Add(1)
+		defer func() {
+			l2RpcCallCount.Add(-1)
+		}()
+	}
+
+	return JSONRPCCall(url, method, parameters...)
 }

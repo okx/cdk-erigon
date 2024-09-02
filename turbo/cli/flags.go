@@ -401,13 +401,14 @@ func setEmbeddedRpcDaemon(ctx *cli.Context, cfg *nodecfg.Config) {
 		TxPoolApiAddr: ctx.String(utils.TxpoolApiAddrFlag.Name),
 
 		StateCache: kvcache.DefaultCoherentConfig,
-
+		
 		DataStreamPort:                    ctx.Int(utils.DataStreamPort.Name),
 		DataStreamHost:                    ctx.String(utils.DataStreamHost.Name),
 		DataStreamWriteTimeout:            ctx.Duration(utils.DataStreamWriteTimeout.Name),
 		DataStreamInactivityTimeout:       ctx.Duration(utils.DataStreamInactivityTimeout.Name),
 		DataStreamInactivityCheckInterval: ctx.Duration(utils.DataStreamInactivityCheckInterval.Name),
 		L2RpcUrl:                          ctx.String(utils.L2RpcUrlFlag.Name),
+		L2RpcLimit:                        ctx.Int64(utils.L2RpcLimitFlag.Name),
 	}
 	if ctx.IsSet(utils.HttpCompressionFlag.Name) {
 		c.HttpCompression = ctx.Bool(utils.HttpCompressionFlag.Name)

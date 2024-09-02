@@ -2,15 +2,15 @@ package commands
 
 import (
 	"fmt"
-	"strings"
-
 	"math/big"
+	"strings"
 
 	"github.com/gateway-fm/cdk-erigon-lib/common"
 	"github.com/gateway-fm/cdk-erigon-lib/common/hexutility"
 	"github.com/ledgerwatch/erigon/zk/sequencer"
 	"github.com/ledgerwatch/erigon/zk/zkchainconfig"
 	"github.com/ledgerwatch/erigon/zkevm/jsonrpc/client"
+	"github.com/ledgerwatch/erigon/zkevm/jsonrpc/types"
 )
 
 func (api *APIImpl) isPoolManagerAddressSet() bool {
@@ -22,7 +22,7 @@ func (api *APIImpl) isZkNonSequencer(chainId *big.Int) bool {
 }
 
 func (api *APIImpl) sendTxZk(rpcUrl string, encodedTx hexutility.Bytes, chainId uint64) (common.Hash, error) {
-	res, err := client.JSONRPCCall(rpcUrl, "eth_sendRawTransaction", encodedTx)
+	res, err := client.JSONRPCCallWhitLimit(types.L2RpcLimit{api.l2RpcUrl, api.l2RpcLimit}, rpcUrl, "eth_sendRawTransaction", encodedTx)
 	if err != nil {
 		return common.Hash{}, err
 	}

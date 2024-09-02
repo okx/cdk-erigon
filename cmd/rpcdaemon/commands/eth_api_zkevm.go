@@ -10,3 +10,8 @@ func (api *BaseAPI) GetL2RpcUrl() string {
 	}
 	return api.l2RpcUrl
 }
+
+// For X Layer
+func (api *BaseAPI) SetL2RpcLimit(limit int64) {
+	api.l2RpcLimit = limit
+}

@@ -1,13 +1,14 @@
 package commands
 
 import (
-	"github.com/ledgerwatch/erigon/zkevm/jsonrpc/client"
 	"fmt"
-	"github.com/ledgerwatch/erigon/common/hexutil"
 	libcommon "github.com/gateway-fm/cdk-erigon-lib/common"
+	"github.com/ledgerwatch/erigon/common/hexutil"
 	"github.com/ledgerwatch/erigon/rpc"
-	"strings"
 	"github.com/ledgerwatch/erigon/zkevm/hex"
+	"github.com/ledgerwatch/erigon/zkevm/jsonrpc/client"
+	"github.com/ledgerwatch/erigon/zkevm/jsonrpc/types"
+	"strings"
 )
 
 func (api *APIImpl) sendGetTransactionCountToSequencer(rpcUrl string, address libcommon.Address, blockNrOrHash *rpc.BlockNumberOrHash) (*hexutil.Uint64, error) {
@@ -22,7 +23,7 @@ func (api *APIImpl) sendGetTransactionCountToSequencer(rpcUrl string, address li
 		}
 	}
 
-	res, err := client.JSONRPCCall(rpcUrl, "eth_getTransactionCount", addressHex, blockNrOrHashValue)
+	res, err := client.JSONRPCCallWhitLimit(types.L2RpcLimit{rpcUrl, api.l2RpcLimit}, rpcUrl, "eth_getTransactionCount", addressHex, blockNrOrHashValue)
 	if err != nil {
 		return nil, err
 	}

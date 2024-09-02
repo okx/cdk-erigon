@@ -14,8 +14,9 @@ import (
 	"github.com/ledgerwatch/erigon/core/rawdb"
 	"github.com/ledgerwatch/erigon/core/types"
 	"github.com/ledgerwatch/erigon/rlp"
-	"github.com/ledgerwatch/erigon/zkevm/jsonrpc/client"
 	"github.com/ledgerwatch/erigon/zk/txpool"
+	"github.com/ledgerwatch/erigon/zkevm/jsonrpc/client"
+	jsonrpc "github.com/ledgerwatch/erigon/zkevm/jsonrpc/types"
 )
 
 // NetAPI the interface for the net_ RPC commands
@@ -46,7 +47,7 @@ func NewTxPoolAPI(base *BaseAPI, db kv.RoDB, pool proto_txpool.TxpoolClient, raw
 
 func (api *TxPoolAPIImpl) Content(ctx context.Context) (interface{}, error) {
 	if api.l2RPCUrl != "" {
-		res, err := client.JSONRPCCall(api.l2RPCUrl, "txpool_content")
+		res, err := client.JSONRPCCallWhitLimit(jsonrpc.L2RpcLimit{api.l2RpcUrl, api.l2RpcLimit}, api.l2RPCUrl, "txpool_content")
 		if err != nil {
 			return nil, err
 		}
@@ -137,7 +138,7 @@ func (api *TxPoolAPIImpl) Content(ctx context.Context) (interface{}, error) {
 // Status returns the number of pending and queued transaction in the pool.
 func (api *TxPoolAPIImpl) Status(ctx context.Context) (interface{}, error) {
 	if api.l2RPCUrl != "" {
-		res, err := client.JSONRPCCall(api.l2RPCUrl, "txpool_status")
+		res, err := client.JSONRPCCallWhitLimit(jsonrpc.L2RpcLimit{api.l2RpcUrl, api.l2RpcLimit}, api.l2RPCUrl, "txpool_status")
 		if err != nil {
 			return nil, err
 		}

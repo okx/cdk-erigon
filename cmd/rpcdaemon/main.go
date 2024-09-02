@@ -31,6 +31,7 @@ func main() {
 
 		ethConfig := ethconfig.Defaults
 		ethConfig.L2RpcUrl = cfg.L2RpcUrl
+		ethConfig.Zk.XLayer.L2RpcLimit = cfg.L2RpcLimit
 
 		// TODO: Replace with correct consensus Engine
 		engine := ethash.NewFaker()

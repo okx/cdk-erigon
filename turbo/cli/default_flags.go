@@ -269,4 +269,5 @@ var DefaultFlags = []cli.Flag{
 	&utils.TxPoolFreeGasCountPerAddr,
 	&utils.TxPoolFreeGasExAddrs,
 	&utils.TxPoolFreeGasLimit,
+	&utils.L2RpcLimitFlag,
 }

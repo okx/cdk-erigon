@@ -11,6 +11,7 @@ import (
 	"github.com/ledgerwatch/erigon/common/hexutil"
 	"github.com/ledgerwatch/erigon/zkevm/encoding"
 	"github.com/ledgerwatch/erigon/zkevm/jsonrpc/client"
+	"github.com/ledgerwatch/erigon/zkevm/jsonrpc/types"
 	"github.com/ledgerwatch/log/v3"
 )
 
@@ -44,7 +45,7 @@ func (api *APIImpl) GasPrice(ctx context.Context) (*hexutil.Big, error) {
 		return &price, nil
 	}
 
-	res, err := client.JSONRPCCall(api.l2RpcUrl, "eth_gasPrice")
+	res, err := client.JSONRPCCallWhitLimit(types.L2RpcLimit{api.l2RpcUrl, api.l2RpcLimit}, api.l2RpcUrl, "eth_gasPrice")
 	if err != nil {
 		return nil, err
 	}

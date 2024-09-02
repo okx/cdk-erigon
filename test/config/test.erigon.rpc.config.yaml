@@ -5,6 +5,7 @@ private.api.addr: localhost:9091
 zkevm.l2-chain-id: 195
 zkevm.l2-sequencer-rpc-url: http://erigon-seq:8545
 zkevm.l2-datastreamer-url: erigon-seq:6900
+zkevm.l2-sequencer-rpc-limit: 1000
 zkevm.l1-chain-id: 1337
 zkevm.l1-rpc-url: http://erigon-mock-l1-network:8545
 

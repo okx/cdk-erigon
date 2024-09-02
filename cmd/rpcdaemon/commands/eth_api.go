@@ -131,6 +131,9 @@ type BaseAPI struct {
 	dirs           datadir.Dirs
 	l2RpcUrl       string
 	gasless        bool
+
+	// For X Layer
+	l2RpcLimit int64
 }
 
 func NewBaseApi(f *rpchelper.Filters, stateCache kvcache.Cache, blockReader services.FullBlockReader, agg *libstate.AggregatorV3, singleNodeMode bool, evmCallTimeout time.Duration, engine consensus.EngineReader, dirs datadir.Dirs) *BaseAPI {

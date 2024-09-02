@@ -17,6 +17,7 @@ import (
 	"github.com/ledgerwatch/erigon/zk/apollo"
 	"github.com/ledgerwatch/erigon/zk/sequencer"
 	"github.com/ledgerwatch/erigon/zkevm/jsonrpc/client"
+	"github.com/ledgerwatch/erigon/zkevm/jsonrpc/types"
 	"github.com/ledgerwatch/log/v3"
 )
 
@@ -72,7 +73,7 @@ func (api *APIImpl) getLatestBlockTxNum(ctx context.Context) (int, error) {
 }
 
 func (api *APIImpl) getGPFromTrustedNode(method string) (*big.Int, error) {
-	res, err := client.JSONRPCCall(api.l2RpcUrl, method)
+	res, err := client.JSONRPCCallWhitLimit(types.L2RpcLimit{api.l2RpcUrl, api.l2RpcLimit}, api.l2RpcUrl, method)
 	if err != nil {
 		return nil, errors.New("failed to get gas price from trusted node")
 	}
