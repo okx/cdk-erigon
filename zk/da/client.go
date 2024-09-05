@@ -3,7 +3,6 @@ package da
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
@@ -14,33 +13,24 @@ import (
 	"github.com/ledgerwatch/erigon/zkevm/jsonrpc/client"
 )
 
-const retryDelay = 1000 * time.Millisecond
+const retryDelay = 500 * time.Millisecond
 
 func GetOffChainData(ctx context.Context, url string, hash common.Hash) ([]byte, error) {
 	for {
-		http.DefaultClient.Timeout = 30 * time.Second
-		transport := &http.Transport{
-			DisableKeepAlives: false,
-		}
-		http.DefaultClient.Transport = transport
 		response, err := client.JSONRPCCall(url, "sync_getOffChainData", hash)
 
-		if httpErr, ok := err.(*client.HTTPError); ok && httpErr.StatusCode == http.StatusTooManyRequests {
-			log.Error(fmt.Sprintf("GetOffChainData StatusTooManyRequests， hash:%v, error:%v", hash.String(), err))
+		if err != nil || response.Error != nil {
+			log.Error(fmt.Sprintf("GetOffChainData hash:%v, error:%v, response err:%v", hash.String(), err, response.Error))
 			time.Sleep(retryDelay)
 			continue
 		}
 
-		if err != nil {
-			log.Error(fmt.Sprintf("GetOffChainData hash:%v, error:%v", hash.String(), err))
-			time.Sleep(retryDelay)
-			continue
-		}
-
-		if response.Error != nil {
-			log.Error(fmt.Sprintf("GetOffChainData hash:%v, error:%v", hash.String(), response.Error))
-			time.Sleep(retryDelay)
-			continue
+		select {
+		case <-ctx.Done():
+			errMsg := fmt.Sprintf("GetOffChainData hash:%v, context done", hash.String())
+			log.Error(errMsg)
+			return nil, fmt.Errorf(errMsg)
+		default:
 		}
 
 		return hexutil.Decode(strings.Trim(string(response.Result), "\""))
