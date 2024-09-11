@@ -4,30 +4,25 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/ledgerwatch/log/v3"
 )
 
 var instance *statisticsInstance
 var once sync.Once
 
-// GetLogStatistics is get log instance for statistic
 func GetLogStatistics() Statistics {
 	once.Do(func() {
 		instance = &statisticsInstance{}
-		instance.init()
+		instance.resetStatistics()
 	})
 	return instance
 }
 
 type statisticsInstance struct {
-	timestamp  map[logTag]time.Time
-	statistics map[logTag]int64 // value maybe the counter or time.Duration(ms)
-	tags       map[logTag]string
-}
-
-func (l *statisticsInstance) init() {
-	l.timestamp = make(map[logTag]time.Time)
-	l.statistics = make(map[logTag]int64)
-	l.tags = make(map[logTag]string)
+	newRoundTime time.Time
+	statistics   map[logTag]int64 // value maybe the counter or time.Duration(ms)
+	tags         map[logTag]string
 }
 
 func (l *statisticsInstance) CumulativeCounting(tag logTag) {
@@ -46,23 +41,15 @@ func (l *statisticsInstance) SetTag(tag logTag, value string) {
 	l.tags[tag] = value
 }
 
-func (l *statisticsInstance) UpdateTimestamp(tag logTag, tm time.Time) {
-	l.timestamp[tag] = tm
-}
-
-func (l *statisticsInstance) ResetStatistics() {
+func (l *statisticsInstance) resetStatistics() {
+	l.newRoundTime = time.Now()
 	l.statistics = make(map[logTag]int64)
 	l.tags = make(map[logTag]string)
 }
 
 func (l *statisticsInstance) Summary() string {
-	batchTotalDuration := "-"
-	if key, ok := l.timestamp[NewRound]; ok {
-		batchTotalDuration = strconv.Itoa(int(time.Since(key).Milliseconds()))
-	}
-
 	batch := "Batch<" + l.tags[FinalizeBatchNumber] + ">, "
-	totalDuration := "TotalDuration<" + batchTotalDuration + "ms>, "
+	totalDuration := "TotalDuration<" + strconv.Itoa(int(time.Since(l.newRoundTime).Milliseconds())) + "ms>, "
 	gasUsed := "GasUsed<" + strconv.Itoa(int(l.statistics[BatchGas])) + ">, "
 	blockCount := "Block<" + strconv.Itoa(int(l.statistics[BlockCounter])) + ">, "
 	tx := "Tx<" + strconv.Itoa(int(l.statistics[TxCounter])) + ">, "
@@ -83,7 +70,8 @@ func (l *statisticsInstance) Summary() string {
 		reprocessTx + resourceOverTx + failTx + invalidTx + processTxTiming + pbStateTiming +
 		zkIncIntermediateHashesTiming + finaliseBlockWriteTiming + batchCommitDBTiming +
 		batchCloseReason
-
+	log.Info(result)
+	l.resetStatistics()
 	return result
 }
 

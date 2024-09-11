@@ -434,8 +434,7 @@ func SpawnSequencingStage(
 	batchTime := time.Since(batchStart)
 	metrics.BatchExecuteTime(string(batchCloseReason), batchTime)
 	metrics.GetLogStatistics().SetTag(metrics.FinalizeBatchNumber, strconv.Itoa(int(batchState.batchNumber)))
-	log.Info(metrics.GetLogStatistics().Summary())
-	metrics.GetLogStatistics().UpdateTimestamp(metrics.NewRound, time.Now())
+	metrics.GetLogStatistics().Summary()
 	tryToSleepSequencer(cfg.zk.XLayer.SequencerBatchSleepDuration, logPrefix)
 
 	// TODO: It is 99% sure that there is no need to write this in any of processInjectedInitialBatch, alignExecutionToDatastream, doCheckForBadBatch but it is worth double checknig

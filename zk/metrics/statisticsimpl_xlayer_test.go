@@ -7,7 +7,7 @@ import (
 
 func TestStatisticsInstanceSummary(t *testing.T) {
 	type fields struct {
-		timestamp  map[logTag]time.Time
+		timestamp  time.Time
 		statistics map[logTag]int64
 		tags       map[logTag]string
 	}
@@ -17,7 +17,7 @@ func TestStatisticsInstanceSummary(t *testing.T) {
 		want   string
 	}{
 		{"1", fields{
-			timestamp: map[logTag]time.Time{NewRound: time.Now().Add(-time.Second)},
+			timestamp: time.Now().Add(-time.Second),
 			statistics: map[logTag]int64{
 				BatchGas:                      111111,
 				TxCounter:                     10,
@@ -39,9 +39,9 @@ func TestStatisticsInstanceSummary(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			l := &statisticsInstance{
-				timestamp:  tt.fields.timestamp,
-				statistics: tt.fields.statistics,
-				tags:       tt.fields.tags,
+				newRoundTime: tt.fields.timestamp,
+				statistics:   tt.fields.statistics,
+				tags:         tt.fields.tags,
 			}
 			t.Log(l.Summary())
 		})

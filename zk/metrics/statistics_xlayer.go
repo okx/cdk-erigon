@@ -4,21 +4,7 @@ import (
 	"time"
 )
 
-// LogTag is a type used for logging tags.
 type logTag string
-
-type Statistics interface {
-	CumulativeCounting(tag logTag)
-	CumulativeValue(tag logTag, value int64)
-	CumulativeTiming(tag logTag, duration time.Duration)
-	SetTag(tag logTag, value string)
-	GetTag(tag logTag) string
-	GetStatistics(tag logTag) int64
-	Summary() string
-	ResetStatistics()
-
-	UpdateTimestamp(tag logTag, tm time.Time)
-}
 
 const (
 	BlockCounter                  logTag = "BlockCounter"
@@ -39,3 +25,13 @@ const (
 	ZkIncIntermediateHashesTiming logTag = "ZkIncIntermediateHashesTiming"
 	FinaliseBlockWriteTiming      logTag = "FinaliseBlockWriteTiming"
 )
+
+type Statistics interface {
+	CumulativeCounting(tag logTag)
+	CumulativeValue(tag logTag, value int64)
+	CumulativeTiming(tag logTag, duration time.Duration)
+	SetTag(tag logTag, value string)
+	GetTag(tag logTag) string
+	GetStatistics(tag logTag) int64
+	Summary() string
+}
