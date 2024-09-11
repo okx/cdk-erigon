@@ -17,7 +17,6 @@ import (
 	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
 	"github.com/ledgerwatch/erigon/zk"
 	"github.com/ledgerwatch/erigon/zk/metrics"
-	"github.com/ledgerwatch/erigon/zk/statis"
 	"github.com/ledgerwatch/erigon/zk/utils"
 )
 
@@ -149,7 +148,7 @@ func SpawnSequencingStage(
 	log.Info(fmt.Sprintf("[%s] Starting batch %d...", logPrefix, batchState.batchNumber))
 
 	// For X Layer
-	batchCloseReason := ""
+	var batchCloseReason metrics.BatchFinalizeType
 	batchStart := time.Now()
 
 	for blockNumber := executionAt + 1; runLoopBlocks; blockNumber++ {
@@ -171,10 +170,6 @@ func SpawnSequencingStage(
 				break
 			}
 		}
-
-		// For X Layer
-		statis.BlockLogger().SetBlockNum(blockNumber)
-		blockStart := time.Now()
 
 		header, parentBlock, err := prepareHeader(sdb.tx, blockNumber-1, batchState.blockState.getDeltaTimestamp(), batchState.getBlockHeaderForcedTimestamp(), batchState.forkId, batchState.getCoinbase(&cfg))
 		if err != nil {
@@ -201,7 +196,7 @@ func SpawnSequencingStage(
 
 		if !batchState.isAnyRecovery() && overflowOnNewBlock {
 			// For X Layer
-			metrics.GetLogStatistics().SetTag(metrics.BatchCloseReason, metrics.CounterOverflow)
+			batchCloseReason = metrics.BatchCounterOverflow
 			break
 		}
 
@@ -234,7 +229,7 @@ func SpawnSequencingStage(
 			case <-batchTicker.C:
 				if !batchState.isAnyRecovery() {
 					// For X Layer
-					metrics.GetLogStatistics().SetTag(metrics.BatchCloseReason, metrics.EmptyTimeOut)
+					batchCloseReason = metrics.BatchTimeOut
 					runLoopBlocks = false
 					break LOOP_TRANSACTIONS
 				}
@@ -246,10 +241,12 @@ func SpawnSequencingStage(
 					}
 				} else if !batchState.isL1Recovery() {
 					var allConditionsOK bool
+					start := time.Now()
 					batchState.blockState.transactionsForInclusion, allConditionsOK, err = getNextPoolTransactions(ctx, cfg, executionAt, batchState.forkId, batchState.yieldedTransactions)
 					if err != nil {
 						return err
 					}
+					metrics.GetLogStatistics().CumulativeTiming(metrics.GetTx, time.Since(start))
 
 					if len(batchState.blockState.transactionsForInclusion) == 0 {
 						if allConditionsOK {
@@ -257,9 +254,11 @@ func SpawnSequencingStage(
 						} else {
 							time.Sleep(batchContext.cfg.zk.SequencerTimeoutOnEmptyTxPool / 5) // we do not need to sleep too long for txpool not ready
 						}
+						metrics.GetLogStatistics().CumulativeCounting(metrics.GetTxPauseCounter)
 					} else {
 						log.Trace(fmt.Sprintf("[%s] Yielded transactions from the pool", logPrefix), "txCount", len(batchState.blockState.transactionsForInclusion))
 					}
+
 				}
 
 				for i, transaction := range batchState.blockState.transactionsForInclusion {
@@ -271,8 +270,11 @@ func SpawnSequencingStage(
 
 					// The copying of this structure is intentional
 					backupDataSizeChecker := *blockDataSizeChecker
+					start := time.Now()
 					receipt, execResult, anyOverflow, err := attemptAddTransaction(cfg, sdb, ibs, batchCounters, &blockContext, header, transaction, effectiveGas, batchState.isL1Recovery(), batchState.forkId, l1TreeUpdateIndex, &backupDataSizeChecker)
+					metrics.GetLogStatistics().CumulativeTiming(metrics.ProcessingTxTiming, time.Since(start))
 					if err != nil {
+						metrics.GetLogStatistics().CumulativeCounting(metrics.FailTxCounter)
 						if batchState.isLimboRecovery() {
 							panic("limbo transaction has already been executed once so they must not fail while re-executing")
 						}
@@ -293,6 +295,7 @@ func SpawnSequencingStage(
 					}
 
 					if anyOverflow {
+						metrics.GetLogStatistics().CumulativeCounting(metrics.FailTxResourceOverCounter)
 						if batchState.isLimboRecovery() {
 							panic("limbo transaction has already been executed once so they must not overflow counters while re-executing")
 						}
@@ -315,7 +318,7 @@ func SpawnSequencingStage(
 							}
 
 							// For X Layer
-							metrics.GetLogStatistics().SetTag(metrics.BatchCloseReason, metrics.CounterOverflow)
+							batchCloseReason = metrics.BatchCounterOverflow
 							runLoopBlocks = false
 							break LOOP_TRANSACTIONS
 						}
@@ -323,6 +326,7 @@ func SpawnSequencingStage(
 					}
 
 					if err == nil {
+						metrics.GetLogStatistics().CumulativeValue(metrics.BatchGas, int64(execResult.UsedGas))
 						blockDataSizeChecker = &backupDataSizeChecker
 						batchState.onAddedTransaction(transaction, receipt, execResult, effectiveGas)
 					}
@@ -339,7 +343,7 @@ func SpawnSequencingStage(
 				}
 
 				if batchState.isLimboRecovery() {
-					metrics.GetLogStatistics().SetTag(metrics.BatchCloseReason, metrics.LimboRecovery)
+					batchCloseReason = metrics.BatchLimboRecovery
 					runLoopBlocks = false
 					break LOOP_TRANSACTIONS
 				}
@@ -368,10 +372,6 @@ func SpawnSequencingStage(
 		} else {
 			log.Info(fmt.Sprintf("[%s] Finish block %d with %d transactions...", logPrefix, blockNumber, len(batchState.blockState.builtBlockElements.transactions)))
 		}
-
-		// For X Layer
-		BlockTxCount := uint64(len(batchState.blockState.builtBlockElements.transactions))
-		statis.BlockLogger().SetTxCount(BlockTxCount)
 
 		// add a check to the verifier and also check for responses
 		batchState.onBuiltBlock(blockNumber)
@@ -409,11 +409,6 @@ func SpawnSequencingStage(
 		if err != nil || needsUnwind {
 			return err
 		}
-
-		// For X Layer
-		blockTime := time.Since(blockStart)
-		statis.BlockLogger().SetTotalDuration(blockTime)
-		statis.BlockLogger().PrintLogAndFlush()
 	}
 
 	cfg.legacyVerifier.Wait()
@@ -435,10 +430,12 @@ func SpawnSequencingStage(
 	}
 
 	// For X Layer
+	metrics.GetLogStatistics().SetTag(metrics.BatchCloseReason, string(batchCloseReason))
 	batchTime := time.Since(batchStart)
-	statis.BatchLogger().SetTotalDuration(batchTime)
-	metrics.BatchExecuteTime(batchCloseReason, batchTime)
+	metrics.BatchExecuteTime(string(batchCloseReason), batchTime)
 	metrics.GetLogStatistics().SetTag(metrics.FinalizeBatchNumber, strconv.Itoa(int(batchState.batchNumber)))
+	log.Info(metrics.GetLogStatistics().Summary())
+	metrics.GetLogStatistics().UpdateTimestamp(metrics.NewRound, time.Now())
 	tryToSleepSequencer(cfg.zk.XLayer.SequencerBatchSleepDuration, logPrefix)
 
 	// TODO: It is 99% sure that there is no need to write this in any of processInjectedInitialBatch, alignExecutionToDatastream, doCheckForBadBatch but it is worth double checknig
@@ -448,6 +445,9 @@ func SpawnSequencingStage(
 	}
 
 	log.Info(fmt.Sprintf("[%s] Finish batch %d...", batchContext.s.LogPrefix(), batchState.batchNumber))
+	start := time.Now()
+	err = sdb.tx.Commit()
+	metrics.GetLogStatistics().CumulativeTiming(metrics.BatchCommitDBTiming, time.Since(start))
 
-	return sdb.tx.Commit()
+	return err
 }

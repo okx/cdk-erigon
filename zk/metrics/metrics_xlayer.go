@@ -8,19 +8,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-type BatchFinalizeTypeLabel string
+type BatchFinalizeType string
 
 const (
-	BatchFinalizeTypeLabelDeadline  BatchFinalizeTypeLabel = "deadline"
-	BatchFinalizeTypeLabelFullBatch BatchFinalizeTypeLabel = "full_batch"
-)
-
-const (
-	BlockTickerTimeOut = "BlockTickerTimeOut"
-	CounterOverflow    = "BatchCounterOverflow"
-	EmptyTimeOut       = "EmptyBatchTimeOut"
-	NonEmptyTimeOut    = "NonEmptyBatchTimeOut"
-	LimboRecovery      = "LimboRecovery"
+	BatchTimeOut         BatchFinalizeType = "EmptyBatchTimeOut"
+	BatchCounterOverflow BatchFinalizeType = "BatchCounterOverflow"
+	BatchLimboRecovery   BatchFinalizeType = "LimboRecovery"
 )
 
 var (
