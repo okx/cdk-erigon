@@ -3,6 +3,7 @@ package stages
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/gateway-fm/cdk-erigon-lib/common"
@@ -16,7 +17,7 @@ import (
 	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
 	"github.com/ledgerwatch/erigon/zk"
 	"github.com/ledgerwatch/erigon/zk/metrics"
-	"github.com/ledgerwatch/erigon/zk/seqlog"
+	"github.com/ledgerwatch/erigon/zk/statis"
 	"github.com/ledgerwatch/erigon/zk/utils"
 )
 
@@ -150,9 +151,11 @@ func SpawnSequencingStage(
 	// For X Layer
 	batchCloseReason := ""
 	batchStart := time.Now()
-	seqlog.GetBatchLogger().SetBlockNum(batchState.batchNumber)
 
 	for blockNumber := executionAt + 1; runLoopBlocks; blockNumber++ {
+		// For X Layer
+		metrics.GetLogStatistics().CumulativeCounting(metrics.BlockCounter)
+
 		log.Info(fmt.Sprintf("[%s] Starting block %d (forkid %v)...", logPrefix, blockNumber, batchState.forkId))
 		logTicker.Reset(10 * time.Second)
 		blockTicker.Reset(cfg.zk.SequencerBlockSealTime)
@@ -170,8 +173,7 @@ func SpawnSequencingStage(
 		}
 
 		// For X Layer
-		log.Info(fmt.Sprintf("[%s] Starting block %d (forkid %v)...", logPrefix, blockNumber, forkId))
-		seqlog.GetBlockLogger().SetBlockNum(blockNumber)
+		statis.BlockLogger().SetBlockNum(blockNumber)
 		blockStart := time.Now()
 
 		header, parentBlock, err := prepareHeader(sdb.tx, blockNumber-1, batchState.blockState.getDeltaTimestamp(), batchState.getBlockHeaderForcedTimestamp(), batchState.forkId, batchState.getCoinbase(&cfg))
@@ -199,8 +201,7 @@ func SpawnSequencingStage(
 
 		if !batchState.isAnyRecovery() && overflowOnNewBlock {
 			// For X Layer
-			batchCloseReason = metrics.CounterOverflow
-			seqlog.GetBatchLogger().SetClosingReason(metrics.CounterOverflow)
+			metrics.GetLogStatistics().SetTag(metrics.BatchCloseReason, metrics.CounterOverflow)
 			break
 		}
 
@@ -219,10 +220,6 @@ func SpawnSequencingStage(
 			log.Info(fmt.Sprintf("[%s] Waiting for txs from the pool...", logPrefix))
 		}
 
-		// For X Layer
-		addTxsStart := time.Now()
-		blockCloseReason := ""
-
 	LOOP_TRANSACTIONS:
 		for {
 			select {
@@ -232,15 +229,12 @@ func SpawnSequencingStage(
 				}
 			case <-blockTicker.C:
 				if !batchState.isAnyRecovery() {
-					// For X Layer
-					blockCloseReason = metrics.BlockTickerTimeOut
 					break LOOP_TRANSACTIONS
 				}
 			case <-batchTicker.C:
 				if !batchState.isAnyRecovery() {
 					// For X Layer
-					batchCloseReason = metrics.EmptyTimeOut
-					seqlog.GetBatchLogger().SetClosingReason(metrics.EmptyTimeOut)
+					metrics.GetLogStatistics().SetTag(metrics.BatchCloseReason, metrics.EmptyTimeOut)
 					runLoopBlocks = false
 					break LOOP_TRANSACTIONS
 				}
@@ -269,6 +263,9 @@ func SpawnSequencingStage(
 				}
 
 				for i, transaction := range batchState.blockState.transactionsForInclusion {
+					// For X Layer
+					metrics.GetLogStatistics().CumulativeCounting(metrics.TxCounter)
+
 					txHash := transaction.Hash()
 					effectiveGas := batchState.blockState.getL1EffectiveGases(cfg, i)
 
@@ -317,6 +314,8 @@ func SpawnSequencingStage(
 								log.Trace(fmt.Sprintf("single transaction %s overflow counters", txHash))
 							}
 
+							// For X Layer
+							metrics.GetLogStatistics().SetTag(metrics.BatchCloseReason, metrics.CounterOverflow)
 							runLoopBlocks = false
 							break LOOP_TRANSACTIONS
 						}
@@ -340,19 +339,11 @@ func SpawnSequencingStage(
 				}
 
 				if batchState.isLimboRecovery() {
+					metrics.GetLogStatistics().SetTag(metrics.BatchCloseReason, metrics.LimboRecovery)
 					runLoopBlocks = false
 					break LOOP_TRANSACTIONS
 				}
 			}
-		}
-
-		// For X Layer
-		if blockCloseReason == metrics.BlockTickerTimeOut {
-			seqlog.GetBlockLogger().AppendStepLog(seqlog.WaitBlockTimeOut, time.Since(addTxsStart))
-		} else if batchCloseReason == metrics.EmptyTimeOut {
-			seqlog.GetBlockLogger().AppendStepLog(seqlog.WaitBatchTimeOut, time.Since(addTxsStart))
-		} else {
-			seqlog.GetBlockLogger().AppendStepLog(seqlog.AddTxs, time.Since(addTxsStart))
 		}
 
 		if block, err = doFinishBlockAndUpdateState(batchContext, ibs, header, parentBlock, batchState, ger, l1BlockHash, l1TreeUpdateIndex, infoTreeIndexProgress, batchCounters); err != nil {
@@ -380,8 +371,7 @@ func SpawnSequencingStage(
 
 		// For X Layer
 		BlockTxCount := uint64(len(batchState.blockState.builtBlockElements.transactions))
-		seqlog.GetBlockLogger().SetTxCount(BlockTxCount)
-		seqlog.GetBatchLogger().AccumulateTxCount(BlockTxCount)
+		statis.BlockLogger().SetTxCount(BlockTxCount)
 
 		// add a check to the verifier and also check for responses
 		batchState.onBuiltBlock(blockNumber)
@@ -422,10 +412,8 @@ func SpawnSequencingStage(
 
 		// For X Layer
 		blockTime := time.Since(blockStart)
-		seqlog.GetBlockLogger().SetTotalDuration(blockTime)
-		seqlog.GetBatchLogger().AppendBlockLog(blockNumber, blockTime)
-		seqlog.GetBatchLogger().AccumulateBlockCount()
-		log.Info(seqlog.GetBlockLogger().PrintLogAndFlush())
+		statis.BlockLogger().SetTotalDuration(blockTime)
+		statis.BlockLogger().PrintLogAndFlush()
 	}
 
 	cfg.legacyVerifier.Wait()
@@ -448,9 +436,9 @@ func SpawnSequencingStage(
 
 	// For X Layer
 	batchTime := time.Since(batchStart)
-	seqlog.GetBatchLogger().SetTotalDuration(batchTime)
+	statis.BatchLogger().SetTotalDuration(batchTime)
 	metrics.BatchExecuteTime(batchCloseReason, batchTime)
-	log.Info(seqlog.GetBatchLogger().PrintLogAndFlush())
+	metrics.GetLogStatistics().SetTag(metrics.FinalizeBatchNumber, strconv.Itoa(int(batchState.batchNumber)))
 	tryToSleepSequencer(cfg.zk.XLayer.SequencerBatchSleepDuration, logPrefix)
 
 	// TODO: It is 99% sure that there is no need to write this in any of processInjectedInitialBatch, alignExecutionToDatastream, doCheckForBadBatch but it is worth double checknig

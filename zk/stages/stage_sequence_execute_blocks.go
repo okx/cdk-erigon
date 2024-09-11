@@ -18,7 +18,7 @@ import (
 	"github.com/ledgerwatch/erigon/smt/pkg/blockinfo"
 	"github.com/ledgerwatch/erigon/zk/erigon_db"
 	"github.com/ledgerwatch/erigon/zk/hermez_db"
-	"github.com/ledgerwatch/erigon/zk/seqlog"
+	"github.com/ledgerwatch/erigon/zk/statis"
 	zktypes "github.com/ledgerwatch/erigon/zk/types"
 	"github.com/ledgerwatch/erigon/zk/utils"
 )
@@ -166,7 +166,7 @@ func finaliseBlock(
 		return nil, err
 	}
 	// For X Layer
-	seqlog.GetBlockLogger().AppendStepLog(seqlog.PbState, time.Since(pbStateStart))
+	statis.BlockLogger().AppendStepLog(statis.PbState, time.Since(pbStateStart))
 
 	if batchState.isL1Recovery() {
 		for i, receipt := range builtBlockElements.receipts {
@@ -202,7 +202,7 @@ func finaliseBlock(
 	}
 
 	// For X Layer
-	seqlog.GetBlockLogger().AppendStepLog(seqlog.ZkInc, time.Since(zkIncStart))
+	statis.BlockLogger().AppendStepLog(statis.ZkIncIntermediateHashes, time.Since(zkIncStart))
 
 	doFinStart := time.Now()
 	finalHeader := finalBlock.HeaderNoCopy()
@@ -253,7 +253,7 @@ func finaliseBlock(
 	}
 
 	// For X Layer
-	seqlog.GetBlockLogger().AppendStepLog(seqlog.DoFin, time.Since(doFinStart))
+	statis.BlockLogger().AppendStepLog(statis.FinaliseBlockWrite, time.Since(doFinStart))
 
 	// write batch counters
 	err = batchContext.sdb.hermezDb.WriteBatchCounters(newNum.Uint64(), batchCounters.CombineCollectorsNoChanges().UsedAsMap())

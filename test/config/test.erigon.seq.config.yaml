@@ -22,7 +22,7 @@ zkevm.l1-query-delay: 6000
 zkevm.rpc-ratelimit: 300
 zkevm.datastream-version: 2
 
-log.console.verbosity: 4
+log.console.verbosity: info
 
 #zkevm.executor-urls: erigon-stateless-executor:50071
 zkevm.executor-urls: ""
@@ -38,7 +38,7 @@ zkevm.data-stream-port: 6900
 zkevm.default-gas-price: 1000000000
 zkevm.max-gas-price: 0
 zkevm.gas-price-factor: 0.000001
-#zkevm.gasless: true
+zkevm.gasless: true
 
 externalcl: true
 http.api: [eth, debug, net, trace, web3, erigon, txpool, zkevm]
@@ -78,7 +78,7 @@ txpool.enablefreegasbynonce : true
 txpool.freegascountperaddr : 100
 
 gpo.type: "follower"
-gpo.update-period: "2s"
+gpo.update-period: "60s"
 gpo.factor: 0.01
 gpo.kafka-url: "0.0.0.0"
 gpo.topic: "explorer"

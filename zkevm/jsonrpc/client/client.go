@@ -75,6 +75,7 @@ func JSONRPCCall(url, method string, parameters ...interface{}) (types.Response,
 	if err != nil {
 		return types.Response{}, err
 	}
+	defer httpRes.Body.Close()
 
 	var res types.Response
 	err = json.Unmarshal(resBody, &res)

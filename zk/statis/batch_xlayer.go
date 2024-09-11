@@ -1,9 +1,11 @@
-package seqlog
+package statis
 
 import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/ledgerwatch/log/v3"
 )
 
 var batchLogger *batchLogInstance
@@ -15,10 +17,9 @@ type batchLogInstance struct {
 	TxCount       uint64
 	ClosingReason string
 	TotalDuration time.Duration
-	StepLog       string
 }
 
-func GetBatchLogger() *batchLogInstance {
+func BatchLogger() *batchLogInstance {
 	batchOnce.Do(func() {
 		batchLogger = &batchLogInstance{}
 		batchLogger.init()
@@ -32,7 +33,6 @@ func (b *batchLogInstance) init() {
 	b.TxCount = 0
 	b.ClosingReason = ""
 	b.TotalDuration = 0
-	b.StepLog = ""
 }
 
 func (b *batchLogInstance) SetBlockNum(batchNum uint64) {
@@ -55,20 +55,9 @@ func (b *batchLogInstance) SetTotalDuration(totalDuration time.Duration) {
 	b.TotalDuration = totalDuration
 }
 
-func (b *batchLogInstance) AppendBlockLog(blockNum uint64, stepDuration time.Duration) {
-	stepFloatDuration := float64(stepDuration.Microseconds()) / 1000
-	b.StepLog = b.StepLog + "," + fmt.Sprintf("Block %d<%.2fms>", blockNum, stepFloatDuration)
-}
+func (b *batchLogInstance) PrintLogAndFlush() {
+	itemLog := fmt.Sprintf("[Statis Batch] <%v>, ClosingReason<%v>, BlockCount<%v>, TxCount<%v>, TotalDuration<%vms>", b.BatchNum, b.ClosingReason, b.BlockCount, b.TxCount, b.TotalDuration.Milliseconds())
+	log.Info(itemLog)
 
-func (b *batchLogInstance) AppendCommitLog(stepDuration time.Duration) {
-	stepFloatDuration := float64(stepDuration.Microseconds()) / 1000
-	b.StepLog = b.StepLog + "," + fmt.Sprintf("BatchCommit<%.2fms>", stepFloatDuration)
-}
-
-func (b *batchLogInstance) PrintLogAndFlush() string {
-	totalFloatDuration := float64(b.TotalDuration.Microseconds()) / 1000.0
-	itemLog := fmt.Sprintf("[Batch Log] Batch<%d>,ClosingReason<%s>,Block<%d>,Tx<%d>,TotalDuration<%.2fms>", b.BatchNum, b.ClosingReason, b.BlockCount, b.TxCount, totalFloatDuration)
-	overallLog := itemLog + b.StepLog
 	b.init()
-	return overallLog
 }

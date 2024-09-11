@@ -16,10 +16,11 @@ const (
 )
 
 const (
-	BlockTickerTimeOut = "blockTickerTimeOut"
+	BlockTickerTimeOut = "BlockTickerTimeOut"
 	CounterOverflow    = "BatchCounterOverflow"
 	EmptyTimeOut       = "EmptyBatchTimeOut"
 	NonEmptyTimeOut    = "NonEmptyBatchTimeOut"
+	LimboRecovery      = "LimboRecovery"
 )
 
 var (
