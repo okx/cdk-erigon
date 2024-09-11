@@ -175,21 +175,6 @@ var (
 		Usage: "Full batch sleep duration is the time the sequencer sleeps between each full batch iteration.",
 		Value: 0 * time.Second,
 	}
-	XLMetricsHostFlag = cli.StringFlag{
-		Name:  "zkevm.metrics-host",
-		Usage: "prometheus metrics host",
-		Value: "0.0.0.0",
-	}
-	XLMetricsPortFlag = cli.IntFlag{
-		Name:  "zkevm.metrics-port",
-		Usage: "prometheus metrics port",
-		Value: 9095,
-	}
-	XLMetricsEnabledFlag = cli.BoolFlag{
-		Name:  "zkevm.metrics-enabled",
-		Usage: "prometheus metrics enabled",
-		Value: true,
-	}
 	// Sequencer
 	AllowInternalTransactions = cli.BoolFlag{
 		Name:  "zkevm.allow-internal-transactions",

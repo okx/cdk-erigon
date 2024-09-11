@@ -25,9 +25,9 @@ func ApplyFlagsForEthXLayerConfig(ctx *cli.Context, cfg *ethconfig.Config) {
 		EnableInnerTx:               ctx.Bool(utils.AllowInternalTransactions.Name),
 		SequencerBatchSleepDuration: ctx.Duration(utils.SequencerBatchSleepDuration.Name),
 		Metrics: ethconfig.MetricsConfig{
-			Enabled: ctx.Bool(utils.XLMetricsEnabledFlag.Name),
-			Host:    ctx.String(utils.XLMetricsHostFlag.Name),
-			Port:    ctx.Int(utils.XLMetricsPortFlag.Name),
+			Enabled: ctx.Bool(utils.MetricsEnabledFlag.Name),
+			Host:    ctx.String(utils.MetricsHTTPFlag.Name),
+			Port:    ctx.Int(utils.MetricsPortFlag.Name),
 		},
 	}
 

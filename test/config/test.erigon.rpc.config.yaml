@@ -61,9 +61,9 @@ zkevm.nacos-namespace-id: ""
 zkevm.nacos-application-name: ""
 zkevm.nacos-external-listen-addr: ""
 
-zkevm.metrics-host: "0.0.0.0"
-zkevm.metrics-port: "9095"
-zkevm.metrics-enabled: true
+metrics: true
+metrics.addr: "0.0.0.0"
+metrics.port: 9095
 
 db.read.concurrency: 20000
 txpool.globalslots: 100000

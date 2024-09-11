@@ -29,7 +29,7 @@ var (
 	PoolTxCountName      = SeqPrefix + "pool_tx_count"
 )
 
-func XLayerMetricsInit() {
+func Init() {
 	prometheus.MustRegister(BatchExecuteTimeGauge)
 	prometheus.MustRegister(PoolTxCount)
 }
