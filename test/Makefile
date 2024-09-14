@@ -125,3 +125,10 @@ test-1: stop run ## Runs group 1 e2e tests checking race conditions
 	sleep 3
 	docker ps -a
 	trap '$(STOP)' EXIT; MallocNanoZone=0 go test -count=1 -failfast -race -v -p 1 -timeout 600s ../ci/e2e-1/...
+
+.PHONY: retesteth
+test-1: stop run ## Runs group 1 e2e tests checking race conditions
+	sleep 3
+	docker ps -a
+	trap '$(STOP)' EXIT; MallocNanoZone=0 go test -count=1 -failfast -race -v -p 1 -timeout 600s ../ci/e2e-1/...
+
