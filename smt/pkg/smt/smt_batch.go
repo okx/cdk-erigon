@@ -1,6 +1,7 @@
 package smt
 
 import (
+	"container/list"
 	"context"
 	"fmt"
 	"sync"
@@ -8,6 +9,7 @@ import (
 	"github.com/dgravesa/go-parallel/parallel"
 	"github.com/ledgerwatch/erigon/smt/pkg/utils"
 	"github.com/ledgerwatch/erigon/zk"
+	"github.com/ledgerwatch/log/v3"
 )
 
 func (s *SMT) InsertBatch(ctx context.Context, logPrefix string, nodeKeys []*utils.NodeKey, nodeValues []*utils.NodeValue8, nodeValuesHashes []*[4]uint64, rootNodeHash *utils.NodeKey) (*SMTResponse, error) {
@@ -168,7 +170,7 @@ func (s *SMT) InsertBatch(ctx context.Context, logPrefix string, nodeKeys []*uti
 	if smtBatchNodeRoot == nil {
 		rootNodeHash = &utils.NodeKey{0, 0, 0, 0}
 	} else {
-		if err := calculateAndSaveHashesDfs(s, smtBatchNodeRoot, make([]int, 256), 0); err != nil {
+		if err := calculateAndSaveHashes(s, smtBatchNodeRoot, make([]int, 256), 0); err != nil {
 			return nil, fmt.Errorf("calculating and saving hashes dfs: %w", err)
 		}
 		rootNodeHash = (*utils.NodeKey)(smtBatchNodeRoot.hash)
@@ -601,4 +603,188 @@ func getNodeKeyMapValue[T int | *utils.NodeKey](nodeKeyMap map[uint64]map[uint64
 
 	value, found := mapLevel2[nodeKey[3]]
 	return value, found
+}
+
+type SmtNodeJob struct {
+	smtBatchNode *smtBatchNode
+	path         []int
+	level        int
+}
+
+type SaveNodeHash struct {
+	in       [8]uint64
+	capacity [4]uint64
+	h        utils.NodeKey
+}
+
+type SaveHashKey struct {
+	key   utils.NodeKey
+	value utils.NodeKey
+}
+
+func calculateAndSaveHashes(s *SMT, smtBatchNode *smtBatchNode, path []int, level int) error {
+	//return calculateAndSaveHashesDfs(s, smtBatchNode, path, level)
+
+	queue := list.New()
+	var mu sync.Mutex
+
+	findAsyncAbleNodeJobDfs(smtBatchNode, path, level, queue)
+
+	results := make(chan interface{}, 200)
+	var wg sync.WaitGroup
+	for i := 1; i <= 100; i++ {
+		wg.Add(1)
+		go asyncSmtNodeHash(queue, &mu, results, &wg)
+	}
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	for data := range results {
+		switch data.(type) {
+		case SaveNodeHash:
+			hashInfo := data.(SaveNodeHash)
+			err := s.hashSave(hashInfo.in, hashInfo.capacity, hashInfo.h)
+			if err != nil {
+				log.Error("fail to save node hash: ", err)
+			}
+		case SaveHashKey:
+			hashKey := data.(SaveHashKey)
+			err := s.Db.InsertHashKey(hashKey.key, hashKey.value)
+			if err != nil {
+				log.Error("fail to save hash key pair: ", err)
+			}
+		default:
+			log.Error("not supported data type")
+		}
+	}
+
+	return nil
+}
+
+func findAsyncAbleNodeJobDfs(smtBatchNode *smtBatchNode, path []int, level int, jobQueue *list.List) {
+	if smtBatchNode == nil {
+		return
+	}
+
+	if smtBatchNode.leftNode != nil {
+		leftPath := make([]int, len(path))
+		copy(leftPath, path)
+		leftPath[level] = 0
+		findAsyncAbleNodeJobDfs(smtBatchNode.leftNode, leftPath, level+1, jobQueue)
+	}
+
+	if smtBatchNode.rightNode != nil {
+		rightPath := make([]int, len(path))
+		copy(rightPath, path)
+		rightPath[level] = 1
+		findAsyncAbleNodeJobDfs(smtBatchNode.rightNode, rightPath, level+1, jobQueue)
+	}
+
+	if smtBatchNode.isLeaf() || smtBatchNode.leftNode == nil && smtBatchNode.rightNode == nil {
+		jobQueue.PushBack(&SmtNodeJob{
+			smtBatchNode: smtBatchNode,
+			path:         path,
+			level:        level,
+		})
+	}
+
+	return
+}
+
+func asyncSmtNodeHash(jobQueue *list.List, mu *sync.Mutex, results chan<- interface{}, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	var newTask *SmtNodeJob
+	for {
+		mu.Lock()
+
+		newTask = nil
+		if jobQueue.Len() > 0 {
+			front := jobQueue.Front()
+			nodeJob := front.Value.(*SmtNodeJob)
+			jobQueue.Remove(front)
+			mu.Unlock()
+
+			if nodeJob.smtBatchNode.hash != nil {
+				continue
+			}
+
+			if nodeJob.smtBatchNode.isLeaf() {
+				in := utils.ConcatArrays4(*nodeJob.smtBatchNode.nodeLeftHashOrRemainingKey, *nodeJob.smtBatchNode.nodeRightHashOrValueHash)
+				hashObj, err := utils.Hash(in, utils.LeafCapacity)
+				if err != nil {
+					log.Error("Fail to calculate leaf node hash", "err", err)
+				}
+				nodeJob.smtBatchNode.hash = &hashObj
+
+				results <- SaveNodeHash{
+					in:       in,
+					capacity: utils.LeafCapacity,
+					h:        hashObj,
+				}
+
+				nodeKey := utils.JoinKey(nodeJob.path[:nodeJob.level], *nodeJob.smtBatchNode.nodeLeftHashOrRemainingKey)
+				results <- SaveHashKey{
+					key:   hashObj,
+					value: *nodeKey,
+				}
+			} else {
+				var totalHash utils.NodeValue8
+				if nodeJob.smtBatchNode.leftNode != nil {
+					if nodeJob.smtBatchNode.leftNode.hash == nil {
+						newTask = nodeJob
+
+						continue
+					}
+					totalHash.SetHalfValue(*nodeJob.smtBatchNode.leftNode.hash, 0)
+				} else {
+					totalHash.SetHalfValue(*nodeJob.smtBatchNode.nodeLeftHashOrRemainingKey, 0)
+				}
+
+				if nodeJob.smtBatchNode.rightNode != nil {
+					if nodeJob.smtBatchNode.rightNode.hash == nil {
+						newTask = nodeJob
+
+						continue
+					}
+					totalHash.SetHalfValue(*nodeJob.smtBatchNode.rightNode.hash, 1)
+				} else {
+					totalHash.SetHalfValue(*nodeJob.smtBatchNode.nodeRightHashOrValueHash, 1)
+				}
+
+				hashObj, err := utils.Hash(totalHash.ToUintArray(), utils.BranchCapacity)
+				if err != nil {
+					log.Error("Fail to calculate internal node hash", "err", err)
+				}
+				nodeJob.smtBatchNode.hash = &hashObj
+
+				results <- SaveNodeHash{
+					in:       totalHash.ToUintArray(),
+					capacity: utils.BranchCapacity,
+					h:        hashObj,
+				}
+			}
+
+			// add parent node to task list
+			if nodeJob.level > 0 {
+				newTask = &SmtNodeJob{
+					smtBatchNode: nodeJob.smtBatchNode.parentNode,
+					path:         nodeJob.path, // internal node do not need path to cal hash
+					level:        nodeJob.level - 1,
+				}
+			}
+		} else {
+			mu.Unlock()
+			break
+		}
+
+		if newTask != nil {
+			mu.Lock()
+			jobQueue.PushBack(newTask)
+			mu.Unlock()
+		}
+	}
 }
