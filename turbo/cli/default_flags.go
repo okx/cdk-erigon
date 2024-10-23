@@ -272,4 +272,8 @@ var DefaultFlags = []cli.Flag{
 	&utils.TxPoolFreeGasLimit,
 	&utils.HTTPApiKeysFlag,
 	&utils.MethodRateLimitFlag,
+	&utils.DDSType,
+	&utils.DDSRedisUrlFlag,
+	&utils.DDSRedisPasswordFlag,
+	&utils.DDSRedisDBFlag,
 }

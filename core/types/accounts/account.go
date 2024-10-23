@@ -6,8 +6,8 @@ import (
 	"math/bits"
 	"sync"
 
-	"github.com/holiman/uint256"
 	libcommon "github.com/gateway-fm/cdk-erigon-lib/common"
+	"github.com/holiman/uint256"
 
 	"github.com/ledgerwatch/erigon/crypto"
 	"github.com/ledgerwatch/erigon/rlp"
@@ -17,12 +17,12 @@ import (
 // These objects are stored in the main account trie.
 // DESCRIBED: docs/programmers_guide/guide.md#ethereum-state
 type Account struct {
-	Initialised bool
-	Nonce       uint64
-	Balance     uint256.Int
-	Root        libcommon.Hash // merkle root of the storage trie
-	CodeHash    libcommon.Hash // hash of the bytecode
-	Incarnation uint64
+	Initialised bool           `json:"initialised"`
+	Nonce       uint64         `json:"nonce"`
+	Balance     uint256.Int    `json:"balance"`
+	Root        libcommon.Hash `json:"root"`     // merkle root of the storage trie
+	CodeHash    libcommon.Hash `json:"codeHash"` // hash of the bytecode
+	Incarnation uint64         `json:"incarnation"`
 }
 
 const (

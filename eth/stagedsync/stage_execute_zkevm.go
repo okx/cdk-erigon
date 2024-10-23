@@ -2,6 +2,7 @@ package stagedsync
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -31,6 +32,8 @@ import (
 	"github.com/ledgerwatch/erigon/ethdb/olddb"
 	rawdbZk "github.com/ledgerwatch/erigon/zk/rawdb"
 	"github.com/ledgerwatch/erigon/zk/utils"
+
+	"github.com/go-redis/redis/v8"
 )
 
 func SpawnExecuteBlocksStageZk(s *StageState, u Unwinder, tx kv.RwTx, toBlock uint64, ctx context.Context, cfg ExecuteBlockCfg, initialCycle bool, quiet bool) (err error) {
@@ -110,6 +113,11 @@ func SpawnExecuteBlocksStageZk(s *StageState, u Unwinder, tx kv.RwTx, toBlock ui
 
 	stageProgress := s.BlockNumber
 	var stoppedErr error
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     cfg.zk.XLayer.DDSRedis.Url,
+		Password: cfg.zk.XLayer.DDSRedis.Password,
+		DB:       cfg.zk.XLayer.DDSRedis.DB,
+	})
 Loop:
 	for blockNum := s.BlockNumber + 1; blockNum <= to; blockNum++ {
 		if cfg.zk.SyncLimit > 0 && blockNum > cfg.zk.SyncLimit {
@@ -135,7 +143,7 @@ Loop:
 		// For X Layer
 		writeInnerTxs := cfg.zk.XLayer.EnableInnerTx && (nextStagesExpectData || blockNum > cfg.prune.InnerTxs.PruneTo(to))
 
-		execRs, err := executeBlockZk(block, &prevBlockRoot, tx, batch, cfg, *cfg.vmConfig, writeChangeSets, writeReceipts, writeCallTraces, writeInnerTxs, initialCycle, stateStream, hermezDb)
+		execRs, err := executeBlockZk(block, &prevBlockRoot, tx, batch, cfg, *cfg.vmConfig, writeChangeSets, writeReceipts, writeCallTraces, writeInnerTxs, initialCycle, stateStream, hermezDb, rdb)
 		if err != nil {
 			if !errors.Is(err, context.Canceled) {
 				log.Warn(fmt.Sprintf("[%s] Execution failed", s.LogPrefix()), "block", blockNum, "hash", datastreamBlockHash.Hex(), "err", err)
@@ -421,6 +429,7 @@ func executeBlockZk(
 	initialCycle bool,
 	stateStream bool,
 	hermezDb *hermez_db.HermezDb,
+	rdb *redis.Client,
 ) (*core.EphemeralExecResultZk, error) {
 	blockNum := block.NumberU64()
 
@@ -445,7 +454,35 @@ func executeBlockZk(
 	vmConfig.Tracer = callTracer
 
 	getHashFn := core.GetHashFn(block.Header(), getHeader)
-	execRs, err := core.ExecuteBlockEphemerallyZk(cfg.chainConfig, &vmConfig, getHashFn, cfg.engine, block, stateReader, stateWriter, ChainReaderImpl{config: cfg.chainConfig, tx: tx, blockReader: cfg.blockReader}, getTracer, hermezDb, prevBlockRoot)
+
+	// for XLayer
+	execRs := &core.EphemeralExecResultZk{}
+	dds := false
+	//ddsType := apollo.GetDDSType(cfg.zk.XLayer.DDSType)
+	ddsType := cfg.zk.XLayer.DDSType
+	execRsKey := core.GenDDSKey("execRs", blockNum)
+	if ddsType == 1 {
+		dds = true
+		execRs, err = core.ExecuteBlockEphemerallyZkDDSProducer(rdb, cfg.chainConfig, &vmConfig, getHashFn, cfg.engine, block, stateReader, stateWriter, ChainReaderImpl{config: cfg.chainConfig, tx: tx, blockReader: cfg.blockReader}, getTracer, hermezDb, prevBlockRoot)
+		execJson, _ := json.Marshal(execRs)
+		rdb.Set(context.Background(), execRsKey, execJson, 0)
+	} else if ddsType == 2 {
+		redisRs, err := rdb.Get(context.Background(), execRsKey).Bytes()
+		if err == nil && len(redisRs) > 0 {
+			if err = json.Unmarshal(redisRs, &execRs); err != nil {
+				panic(err)
+			} else {
+				dds = true
+				rdb.Set(context.Background(), fmt.Sprintf("useDDS_%d", blockNum), true, 0)
+				core.ExecuteBlockEphemerallyZkDDSConsumer(rdb, cfg.chainConfig, block, stateReader, stateWriter)
+			}
+		} else {
+			rdb.Set(context.Background(), fmt.Sprintf("useDDS_%d", blockNum), false, 0)
+		}
+	}
+	if !dds {
+		execRs, err = core.ExecuteBlockEphemerallyZk(cfg.chainConfig, &vmConfig, getHashFn, cfg.engine, block, stateReader, stateWriter, ChainReaderImpl{config: cfg.chainConfig, tx: tx, blockReader: cfg.blockReader}, getTracer, hermezDb, prevBlockRoot)
+	}
 	if err != nil {
 		return nil, err
 	}

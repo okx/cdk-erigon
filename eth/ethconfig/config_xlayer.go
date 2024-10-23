@@ -11,9 +11,19 @@ type XLayerConfig struct {
 	EnableInnerTx bool
 	// Sequencer
 	SequencerBatchSleepDuration time.Duration
+	// RPC
+	DDSType  int // 0:normal(disable dds); 1:producer; 2:consumer
+	DDSRedis RedisConfig
 }
 
 var DefaultXLayerConfig = XLayerConfig{}
+
+// RedisConfig is the config for dds
+type RedisConfig struct {
+	Url      string // fmt: "ip:port". eg: 127.0.0.1:6379
+	Password string
+	DB       int
+}
 
 // NacosConfig is the config for nacos
 type NacosConfig struct {

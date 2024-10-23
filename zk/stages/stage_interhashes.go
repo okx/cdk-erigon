@@ -141,6 +141,10 @@ func SpawnZkIntermediateHashesStage(s *stagedsync.StageState, u stagedsync.Unwin
 		log.Info(fmt.Sprintf("[%s] SMT not using mapmutation", logPrefix))
 	}
 
+	// for XLayer
+	if cfg.zk.XLayer.DDSType != 0 {
+		shouldIncrement = false
+	}
 	if shouldIncrement {
 		if shouldIncrementBecauseOfAFlag {
 			log.Debug(fmt.Sprintf("[%s] IncrementTreeAlways true - incrementing tree", logPrefix), "previousRootHeight", s.BlockNumber, "calculatingRootHeight", to)
@@ -348,6 +352,7 @@ func regenerateIntermediateHashes(ctx context.Context, logPrefix string, db kv.R
 }
 
 func zkIncrementIntermediateHashes(ctx context.Context, logPrefix string, s *stagedsync.StageState, db kv.RwTx, eridb *db2.EriDb, dbSmt *smt.SMT, from, to uint64) (common.Hash, error) {
+
 	log.Info(fmt.Sprintf("[%s] Increment trie hashes started", logPrefix), "previousRootHeight", s.BlockNumber, "calculatingRootHeight", to)
 	defer log.Info(fmt.Sprintf("[%s] Increment ended", logPrefix))
 

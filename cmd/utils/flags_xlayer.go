@@ -195,6 +195,23 @@ var (
 		Usage: "Method rate limit in requests per second, format: {\"method\":[\"method1\",\"method2\"],\"count\":1,\"bucket\":1}, eg. {\"methods\":[\"eth_call\",\"eth_blockNumber\"],\"count\":10,\"bucket\":1}",
 		Value: "",
 	}
+	DDSType = cli.IntFlag{
+		Name:  "zkevm.dds-type",
+		Usage: "DDS type. 0:disable dds; 1:producer; 2:consumer",
+	}
+	// X Layer DDS redis
+	DDSRedisUrlFlag = cli.StringFlag{
+		Name:  "zkevm.dds-redis-url",
+		Usage: "DDS Redis URL.",
+	}
+	DDSRedisPasswordFlag = cli.StringFlag{
+		Name:  "zkevm.dds-redis-password",
+		Usage: "DDS Redis password.",
+	}
+	DDSRedisDBFlag = cli.IntFlag{
+		Name:  "zkevm.dds-redis-db",
+		Usage: "DDS Redis DB.",
+	}
 )
 
 func setGPOXLayer(ctx *cli.Context, cfg *gaspricecfg.Config) {

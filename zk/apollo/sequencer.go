@@ -72,6 +72,9 @@ func loadEthSequencerConfig(ctx *cli.Context, ethCfg *ethconfig.Config) {
 	if ctx.IsSet(utils.SequencerHaltOnBatchNumber.Name) {
 		ethCfg.Zk.SequencerHaltOnBatchNumber = ctx.Uint64(utils.SequencerHaltOnBatchNumber.Name)
 	}
+	//if ctx.IsSet(utils.DDSType.Name) {
+	//	ethCfg.Zk.XLayer.DDSType = ctx.Int(utils.DDSType.Name)
+	//}
 }
 
 // setSequencerFlag sets the dynamic sequencer apollo flag
@@ -98,3 +101,12 @@ func GetSequencerHalt(localHaltBatchNumber uint64) uint64 {
 	}
 	return localHaltBatchNumber
 }
+
+//func GetDDSType(localDDSType int) int {
+//	if IsApolloConfigSequencerEnabled() {
+//		UnsafeGetApolloConfig().RLock()
+//		defer UnsafeGetApolloConfig().RUnlock()
+//		return UnsafeGetApolloConfig().EthCfg.Zk.XLayer.DDSType
+//	}
+//	return localDDSType
+//}
