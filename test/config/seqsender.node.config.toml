@@ -1,0 +1,55 @@
+[Log]
+Environment = "development" # "production" or "development"
+Level = "debug"
+Outputs = ["stderr"]
+
+[SequenceSender]
+WaitPeriodSendSequence = "15s"
+LastBatchVirtualizationTimeMaxWaitPeriod = "10s"
+L1BlockTimestampMargin = "5s"
+MaxBatchesForL1 = 100
+L2Coinbase = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+SenderAddress = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+DAPermitApiPrivateKey = {Path = "/pk/da.permit.keystore", Password = "testonly"}
+SequencesTxFileName = "sequencesender.json"
+WaitPeriodPurgeTxFile = "60m"
+IsValidiumMode = true
+MaxPendingTx = 1
+	[SequenceSender.StreamClient]
+		Server = "erigon-seq:6900"
+	[SequenceSender.EthTxManager]
+		FrequencyToMonitorTxs = "1s"
+		WaitTxToBeMined = "1m"
+		SafeStatusL1NumberOfBlocks = 1
+		FinalizedStatusL1NumberOfBlocks = 2
+		WaitReceiptToBeGenerated = "8s"
+		PrivateKeys = [
+#			{Path = "/pk/sequencer.keystore", Password = "testonly"},
+		]
+		ForcedGas = 0
+		GasPriceMarginFactor = 1
+		MaxGasPriceLimit = 0
+		PersistenceFilename = "ethtxmanager.json"
+			[SequenceSender.EthTxManager.Etherman]
+				URL = "http://erigon-mock-l1-network:8545"
+				MultiGasProvider = false
+				L1ChainID = 1337
+				HTTPHeaders = []
+			   PolygonZkEVMAddress="0xeb173087729c88a47568AF87b17C653039377BA6"
+			   PolygonRollupManagerAddress="0x2d42E2899662EFf08b13eeb65b154b904C7a1c8a"
+         [SequenceSender.EthTxManager.CustodialAssets]
+				Enable = true
+				URL = "http://xlayer-signer:7001"
+				Symbol = 2882
+				SequencerAddr = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+				AggregatorAddr = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+				WaitResultTimeout = "2m"
+				OperateTypeSeq = 1
+				OperateTypeAgg = 2
+				ProjectSymbol = 3011
+				OperateSymbol = 2
+				SysFrom = 3
+				UserID = 0
+				OperateAmount = 0
+				RequestSignURI = "/priapi/v1/assetonchain/ecology/ecologyOperate"
+				QuerySignURI = "/priapi/v1/assetonchain/ecology/querySignDataByOrderNo"

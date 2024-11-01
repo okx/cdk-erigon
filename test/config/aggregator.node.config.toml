@@ -1,0 +1,92 @@
+
+[Aggregator]
+Host = "0.0.0.0"
+Port = 50081
+RetryTime = "5s"
+VerifyProofInterval = "10s"
+TxProfitabilityCheckerType = "acceptall"
+TxProfitabilityMinReward = "1.1"
+ProofStatePollingInterval = "5s"
+SenderAddress = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+CleanupLockedProofsInterval = "1m"
+GeneratingProofCleanupThreshold = "2m"
+BatchProofSanityCheckEnabled = true
+ForkId = 9
+WitnessURL = "http://erigon-seq:8545"
+LERContract = "0xa40D5f56745a118D0906a34E69aeC8C0Db1cB8fA"
+	[Aggregator.DB]
+		Name = "aggregator_db"
+		User = "aggregator_user"
+		Password = "aggregator_password"
+		Host = "erigon-aggregator-db"
+		Port = "5432"
+		EnableLog = false	
+		MaxConns = 200
+	[Aggregator.Log]
+		Environment = "development" # "production" or "development"
+		Level = "debug"
+		Outputs = ["stderr"]
+	[Aggregator.StreamClient]
+		Server = "erigon-seq:6900"
+	[Aggregator.EthTxManager]
+		FrequencyToMonitorTxs = "1s"
+		WaitTxToBeMined = "1m"
+		SafeStatusL1NumberOfBlocks = 1
+		FinalizedStatusL1NumberOfBlocks = 2
+		WaitReceiptToBeGenerated = "8s"
+		PrivateKeys = [
+#			 {Path = "/pk/aggregator.keystore", Password = "testonly"}
+		]
+		ForcedGas = 0
+		GasPriceMarginFactor = 1
+		MaxGasPriceLimit = 0
+		PersistenceFilename = "/ethtxmanager_aggregator.json"
+			[Aggregator.EthTxManager.Etherman]
+				URL = "http://erigon-mock-l1-network:8545"
+				L1ChainID = 1337
+				PolygonZkEVMAddress="0xeb173087729c88a47568AF87b17C653039377BA6"
+				PolygonRollupManagerAddress="0x2d42E2899662EFf08b13eeb65b154b904C7a1c8a"
+				HTTPHeaders = []
+			[Aggregator.EthTxManager.CustodialAssets]
+				Enable = true
+				URL = "http://xlayer-signer:7001"
+				Symbol = 2882
+				SequencerAddr = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+				AggregatorAddr = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+				WaitResultTimeout = "2m"
+				OperateTypeSeq = 1
+				OperateTypeAgg = 2
+				ProjectSymbol = 3011
+				OperateSymbol = 2
+				SysFrom = 3
+				UserID = 0
+				OperateAmount = 0
+				RequestSignURI = "/priapi/v1/assetonchain/ecology/ecologyOperate"
+				QuerySignURI = "/priapi/v1/assetonchain/ecology/querySignDataByOrderNo"
+	[Aggregator.Synchronizer]
+		[Aggregator.Synchronizer.DB]
+			Name = "state_db"
+			User = "state_user"
+			Password = "state_password"
+			Host = "erigon-state-db"
+			Port = "5432"
+			EnableLog = false
+			MaxConns = 10
+		[Aggregator.Synchronizer.Synchronizer]
+			SyncInterval = "10s"
+			SyncChunkSize = 1000
+			GenesisBlockNumber = 136
+		[Aggregator.Synchronizer.Etherman]
+			[Aggregator.Synchronizer.Etherman.Validium]
+			Enabled = true
+			TrustedSequencerURL = "http://erigon-seq:8545"
+			DataSourcePriority = ["external"]
+			[Aggregator.Synchronizer.Etherman.Validium.Translator]
+			FullMatchRules = []
+		[Aggregator.Synchronizer.Log]
+			Environment = "development" # "production" or "development"
+			Level = "debug"
+			Outputs = ["stderr"]
+
+[EventLog]
+	[EventLog.DB]
