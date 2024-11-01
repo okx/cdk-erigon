@@ -3,6 +3,7 @@ package syncer
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/ledgerwatch/erigon/zkevm/log"
 	"strings"
 
 	"github.com/ledgerwatch/erigon-lib/common"
@@ -168,7 +169,9 @@ func decodeElderberryBatchesValidiumCallData(unpackedCalldata map[string]interfa
 		ForcedTimestamp      uint64    `json:"forcedTimestamp"`
 		ForcedBlockHashL1    [32]uint8 `json:"forcedBlockHashL1"`
 	})
-
+	for a, _ := range unpackedbatches {
+		log.Error(fmt.Sprintf("decodeElderberryBatchesValidiumCallData, map key:%v", a))
+	}
 	calldata := &SequenceBatchesCalldataValidiumElderberry{
 		Batches:              make([]SequencedBatchValidiumElderberry, len(unpackedbatches)),
 		InitSequencedBatch:   unpackedCalldata["initSequencedBatch"].(uint64),
