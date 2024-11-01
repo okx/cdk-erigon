@@ -603,8 +603,9 @@ func (api *ZkEvmAPIImpl) GetBatchByNumber(ctx context.Context, batchNumber rpc.B
 		return nil, err
 	}
 	batch.BatchL2Data = batchL2Data
-
+	log.Error(fmt.Sprintf("Batch %d returned", batchNo))
 	if api.l1Syncer != nil {
+		log.Error(fmt.Sprintf("Batch %d returned-1", batchNo))
 		accInputHash, err := api.getAccInputHash(ctx, hermezDb, batchNo)
 		if err != nil {
 			log.Error(fmt.Sprintf("failed to get acc input hash for batch %d: %v", batchNo, err))
@@ -612,6 +613,7 @@ func (api *ZkEvmAPIImpl) GetBatchByNumber(ctx context.Context, batchNumber rpc.B
 		if accInputHash == nil {
 			accInputHash = &common.Hash{}
 		}
+		log.Error(fmt.Sprintf("Batch %d returned-2:%v", batchNo, accInputHash))
 		batch.AccInputHash = *accInputHash
 	}
 
@@ -706,28 +708,32 @@ type SequenceReader interface {
 
 func (api *ZkEvmAPIImpl) getAccInputHash(ctx context.Context, db SequenceReader, batchNum uint64) (accInputHash *common.Hash, err error) {
 	// get batch sequence
+	log.Error(fmt.Sprintf("GetAccInputHash-0"))
 	prevSequence, batchSequence, err := db.GetRangeSequencesByBatch(batchNum)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get sequence range data for batch %d: %w", batchNum, err)
 	}
-
+	log.Error(fmt.Sprintf("GetAccInputHash-1"))
 	if prevSequence == nil || batchSequence == nil {
 		return nil, fmt.Errorf("failed to get sequence data for batch %d", batchNum)
 	}
-
+	log.Error(fmt.Sprintf("GetAccInputHash-2"))
 	// get batch range for sequence
 	prevSequenceBatch, currentSequenceBatch := prevSequence.BatchNo, batchSequence.BatchNo
 	// get call data for tx
+	log.Error(fmt.Sprintf("GetAccInputHash-3"))
 	l1Transaction, _, err := api.l1Syncer.GetTransaction(batchSequence.L1TxHash)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transaction data for tx %s: %w", batchSequence.L1TxHash, err)
 	}
+	log.Error(fmt.Sprintf("GetAccInputHash-4:%v", l1Transaction.Hash()))
 	sequenceBatchesCalldata := l1Transaction.GetData()
 	if len(sequenceBatchesCalldata) < 10 {
 		return nil, fmt.Errorf("calldata for tx %s is too short", batchSequence.L1TxHash)
 	}
 
 	currentBatchForkId, err := db.GetForkId(currentSequenceBatch)
+	log.Error(fmt.Sprintf("GetAccInputHash-5"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get fork id for batch %d: %w", currentSequenceBatch, err)
 	}
@@ -736,7 +742,7 @@ func (api *ZkEvmAPIImpl) getAccInputHash(ctx context.Context, db SequenceReader,
 	if err != nil {
 		return nil, fmt.Errorf("failed to get old acc input hash for batch %d: %w", prevSequenceBatch, err)
 	}
-
+	log.Error(fmt.Sprintf("GetAccInputHash-6"))
 	decodedSequenceInteerface, err := syncer.DecodeSequenceBatchesCalldata(sequenceBatchesCalldata)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode calldata for tx %s: %w", batchSequence.L1TxHash, err)
@@ -746,17 +752,17 @@ func (api *ZkEvmAPIImpl) getAccInputHash(ctx context.Context, db SequenceReader,
 	if err != nil {
 		return nil, fmt.Errorf("failed to get accInputHash calculation func: %w", err)
 	}
-
+	log.Error(fmt.Sprintf("GetAccInputHash-7"))
 	if totalSequenceBatches == 0 || batchNum-prevSequenceBatch > uint64(totalSequenceBatches) {
 		return nil, fmt.Errorf("batch %d is out of range of sequence calldata", batchNum)
 	}
-
+	log.Error(fmt.Sprintf("GetAccInputHash-8:%v", prevSequenceAccinputHash))
 	accInputHash = &prevSequenceAccinputHash
 	// calculate acc input hash
 	for i := 0; i < int(batchNum-prevSequenceBatch); i++ {
 		accInputHash = accInputHashCalcFn(prevSequenceAccinputHash, i)
 	}
-
+	log.Error(fmt.Sprintf("GetAccInputHash-9:%v", accInputHash))
 	return
 }
 
