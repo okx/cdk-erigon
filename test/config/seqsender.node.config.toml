@@ -24,7 +24,7 @@ MaxPendingTx = 1
 		FinalizedStatusL1NumberOfBlocks = 2
 		WaitReceiptToBeGenerated = "8s"
 		PrivateKeys = [
-#			{Path = "/pk/sequencer.keystore", Password = "testonly"},
+			{Path = "/pk/sequencer.keystore", Password = "testonly"},
 		]
 		ForcedGas = 0
 		GasPriceMarginFactor = 1
@@ -38,7 +38,7 @@ MaxPendingTx = 1
 			   PolygonZkEVMAddress="0xeb173087729c88a47568AF87b17C653039377BA6"
 			   PolygonRollupManagerAddress="0x2d42E2899662EFf08b13eeb65b154b904C7a1c8a"
          [SequenceSender.EthTxManager.CustodialAssets]
-				Enable = true
+				Enable = false
 				URL = "http://xlayer-signer:7001"
 				Symbol = 2882
 				SequencerAddr = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"

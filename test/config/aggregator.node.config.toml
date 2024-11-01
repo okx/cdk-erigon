@@ -35,7 +35,7 @@ LERContract = "0xa40D5f56745a118D0906a34E69aeC8C0Db1cB8fA"
 		FinalizedStatusL1NumberOfBlocks = 2
 		WaitReceiptToBeGenerated = "8s"
 		PrivateKeys = [
-#			 {Path = "/pk/aggregator.keystore", Password = "testonly"}
+			 {Path = "/pk/aggregator.keystore", Password = "testonly"}
 		]
 		ForcedGas = 0
 		GasPriceMarginFactor = 1
@@ -48,7 +48,7 @@ LERContract = "0xa40D5f56745a118D0906a34E69aeC8C0Db1cB8fA"
 				PolygonRollupManagerAddress="0x2d42E2899662EFf08b13eeb65b154b904C7a1c8a"
 				HTTPHeaders = []
 			[Aggregator.EthTxManager.CustodialAssets]
-				Enable = true
+				Enable = false
 				URL = "http://xlayer-signer:7001"
 				Symbol = 2882
 				SequencerAddr = "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
