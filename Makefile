@@ -367,3 +367,6 @@ protobuf:
 ## help:                              print commands help
 help	:	Makefile
 	@sed -n 's/^##//p' $<
+
+build-docker: ## X Layer Builds a docker image with the binary
+	docker build -t cdk-erigon -f ./Dockerfile.local .
