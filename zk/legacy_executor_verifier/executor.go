@@ -12,13 +12,13 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
+	"github.com/google/uuid"
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon/zk/legacy_executor_verifier/proto/github.com/0xPolygonHermez/zkevm-node/state/runtime/executor"
 	"github.com/ledgerwatch/log/v3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
-	"github.com/google/uuid"
 )
 
 var (
@@ -262,7 +262,7 @@ func (e *Executor) Verify(p *Payload, request *VerifierRequest, oldStateRoot com
 	}
 
 	for i, bResp := range resp.BlockResponses {
-		log.Debug("executor result",
+		log.Trace("executor result",
 			"index", i,
 			"parent-hash", common.BytesToHash(bResp.ParentHash),
 			"coinbase", bResp.Coinbase,
