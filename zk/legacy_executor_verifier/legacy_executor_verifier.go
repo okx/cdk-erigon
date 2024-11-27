@@ -249,7 +249,7 @@ func (v *LegacyExecutorVerifier) VerifyAsync(request *VerifierRequest) *Promise[
 			return verifierBundle, err
 		}
 
-		log.Debug("witness generated", "data", hex.EncodeToString(witness))
+		log.Trace("witness generated", "data", hex.EncodeToString(witness))
 
 		// now we need to figure out the timestamp limit for this payload.  It must be:
 		// timestampLimit >= currentTimestamp (from batch pre-state) + deltaTimestamp

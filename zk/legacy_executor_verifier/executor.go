@@ -252,7 +252,7 @@ func (e *Executor) Verify(p *Payload, request *VerifierRequest, oldStateRoot com
 		"correlation", correlation)
 
 	for addr, all := range resp.ReadWriteAddresses {
-		log.Debug("executor result",
+		log.Trace("executor result",
 			"addr", addr,
 			"nonce", all.Nonce,
 			"balance", all.Balance,
@@ -278,7 +278,7 @@ func (e *Executor) Verify(p *Payload, request *VerifierRequest, oldStateRoot com
 
 	counterUndershootCheck(counters, request.Counters, request.BatchNumber)
 
-	log.Debug("Received response from executor", "grpcUrl", e.grpcUrl, "response", resp)
+	log.Trace("Received response from executor", "grpcUrl", e.grpcUrl, "response", resp)
 
 	ok, executorResponse, executorErr := responseCheck(resp, request)
 	return ok, executorResponse, executorErr, nil
