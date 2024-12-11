@@ -142,7 +142,7 @@ func StageLoopIteration(ctx context.Context, db kv.RwDB, txc wrap.TxContainer, s
 	if sequencer.IsSequencer() {
 		canRunCycleInOneTransaction = false // we need to commit when sequencer each run
 	}
-
+	logger.Info("zjg, check", "canRunCycleInOneTransaction", canRunCycleInOneTransaction, "externalTx", externalTx)
 	if canRunCycleInOneTransaction && !externalTx {
 		// -- Process new blocks + commit(no_sync)
 		txc.Tx, err = db.BeginRwNosync(ctx)
