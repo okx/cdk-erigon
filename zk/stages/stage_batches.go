@@ -148,6 +148,7 @@ func SpawnStageBatches(
 	hermezDb := hermez_db.NewHermezDb(tx)
 
 	stageProgressBlockNo, err := stages.GetStageProgress(tx, stages.Batches)
+	log.Info(fmt.Sprintf("[%s] zjg, SpawnStageBatches, Starting from block number", logPrefix), "blockNumber", stageProgressBlockNo)
 	if err != nil {
 		return fmt.Errorf("GetStageProgress: %w", err)
 	}
@@ -401,6 +402,7 @@ func saveStageProgress(tx kv.RwTx, logPrefix string, highestHashableL2BlockNo, h
 	}
 
 	log.Info(fmt.Sprintf("[%s] Saving stage progress", logPrefix), "lastBlockHeight", lastBlockHeight)
+	log.Info(fmt.Sprintf("[%s] zjg, saveStageProgress, Saving stage progress", logPrefix), "lastBlockHeight", lastBlockHeight)
 	if err := stages.SaveStageProgress(tx, stages.Batches, lastBlockHeight); err != nil {
 		return fmt.Errorf("SaveStageProgress: %w", err)
 	}
@@ -530,6 +532,8 @@ func UnwindBatchesStage(u *stagedsync.UnwindState, tx kv.RwTx, cfg BatchesCfg, c
 	if fromBlock > 1 {
 		stageprogress = fromBlock - 1
 	}
+
+	log.Info(fmt.Sprintf("[%s] zjg, UnwindBatchesStage, Saving stage progress", logPrefix), "lastBlockHeight", stageprogress)
 	if err := stages.SaveStageProgress(tx, stages.Batches, stageprogress); err != nil {
 		return fmt.Errorf("SaveStageProgress: %w", err)
 	}
