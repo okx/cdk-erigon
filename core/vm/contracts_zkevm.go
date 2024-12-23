@@ -19,7 +19,9 @@ package vm
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
+	"github.com/0xPolygonHermez/zkevm-data-streamer/log"
 	"math/big"
 
 	"github.com/consensys/gnark-crypto/ecc"
@@ -1229,6 +1231,8 @@ func (c *p256Verify_zkevm) SetOutputLength(outLength int) {
 
 // Run executes the precompiled contract with given 160 bytes of param, returning the output and the used gas
 func (c *p256Verify_zkevm) Run(input []byte) ([]byte, error) {
+	log.Info("zjg,---->p256Verify_zkevm Run---1")
+	log.Info(fmt.Sprintf("input:%v", hex.EncodeToString(input)))
 	if !c.enabled {
 		return nil, ErrUnsupportedPrecompile
 	}
@@ -1236,6 +1240,7 @@ func (c *p256Verify_zkevm) Run(input []byte) ([]byte, error) {
 	// Required input length is 160 bytes
 	const p256VerifyInputLength = 160
 	// Check the input length
+	log.Info("zjg,---->p256Verify_zkevm Run---2")
 	if len(input) != p256VerifyInputLength {
 		// Input length is invalid
 		return nil, nil
@@ -1249,12 +1254,18 @@ func (c *p256Verify_zkevm) Run(input []byte) ([]byte, error) {
 	if c.cc != nil {
 		c.cc.preP256Verify(r, s, x, y)
 	}
+	log.Info("zjg,---->p256Verify_zkevm Run---3")
+	if checkP256Cache(input) {
+		return common.LeftPadBytes(big1.Bytes(), 32), nil
+	}
 	// Verify the secp256r1 signature
 	if secp256r1.Verify(hash, r, s, x, y) {
 		// Signature is valid
+		log.Info("zjg,---->p256Verify_zkevm Run---4")
 		return common.LeftPadBytes(big1.Bytes(), 32), nil
 	} else {
 		// Signature is invalid
+		log.Info("zjg,---->p256Verify_zkevm Run---5")
 		return nil, nil
 	}
 }

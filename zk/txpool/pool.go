@@ -38,7 +38,9 @@ import (
 	"github.com/google/btree"
 	"github.com/hashicorp/golang-lru/v2/simplelru"
 	"github.com/holiman/uint256"
+	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/txpool/txpoolcfg"
+	"github.com/ledgerwatch/erigon/core/vm"
 	"github.com/ledgerwatch/erigon/eth/ethconfig"
 	"github.com/ledgerwatch/erigon/eth/gasprice/gaspricecfg"
 	"github.com/ledgerwatch/log/v3"
@@ -1069,9 +1071,11 @@ func (p *TxPool) addTxs(blockNum uint64, cacheView kvcache.CacheView, senders *s
 	newTxs types.TxSlots, pendingBaseFee, blockGasLimit uint64,
 	pending *PendingPool, baseFee, queued *SubPool,
 	byNonce *BySenderAndNonce, byHash map[string]*metaTx, add func(*metaTx, *types.Announcements) DiscardReason, discard func(*metaTx, DiscardReason), collect bool) (types.Announcements, []DiscardReason, error) {
+	//log.Info("zjg, addTxs------1")
 	protocolBaseFee := calcProtocolBaseFee(pendingBaseFee)
 	if assert.Enable {
 		for _, txn := range newTxs.Txs {
+			log.Info("zjg, addTxs------2")
 			if txn.SenderID == 0 {
 				panic(fmt.Errorf("senderID can't be zero"))
 			}
@@ -1090,6 +1094,30 @@ func (p *TxPool) addTxs(blockNum uint64, cacheView kvcache.CacheView, senders *s
 	discardReasons := make([]DiscardReason, len(newTxs.Txs))
 	announcements := types.Announcements{}
 	for i, txn := range newTxs.Txs {
+		log.Info("zjg, addTxs------3")
+		// TODO: parse transaction input, go run with it
+		hash := []byte("1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef") // 32字节哈希
+		r := new(big.Int).SetBytes([]byte("abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef"))
+		s := new(big.Int).SetBytes([]byte("1234123412341234123412341234123412341234123412341234123412341234"))
+		x := new(big.Int).SetBytes([]byte("7890789078907890789078907890789078907890789078907890789078907890"))
+		y := new(big.Int).SetBytes([]byte("abcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd"))
+
+		rBytes := vm.PadLeft(r.Bytes(), 32)
+		sBytes := vm.PadLeft(s.Bytes(), 32)
+		xBytes := vm.PadLeft(x.Bytes(), 32)
+		yBytes := vm.PadLeft(y.Bytes(), 32)
+
+		var input []byte
+		input = append(input, hash...)
+		input = append(input, rBytes...)
+		input = append(input, sBytes...)
+		input = append(input, xBytes...)
+		input = append(input, yBytes...)
+		log.Info(fmt.Sprintf("zjg, input=%x", len(input)))
+		go vm.AddToMap(input)
+		log.Info("zjg, BytesToAddress-1")
+		a := libcommon.BytesToAddress([]byte{0x01, 0x00})
+		log.Info(fmt.Sprintf("zjg, BytesToAddress-2:%v", a.String()))
 		if found, ok := byHash[string(txn.IDHash[:])]; ok {
 			discardReasons[i] = DuplicateHash
 			// In case if the transation is stuck, "poke" it to rebroadcast
