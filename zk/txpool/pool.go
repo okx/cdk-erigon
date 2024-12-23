@@ -38,7 +38,6 @@ import (
 	"github.com/google/btree"
 	"github.com/hashicorp/golang-lru/v2/simplelru"
 	"github.com/holiman/uint256"
-	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/txpool/txpoolcfg"
 	"github.com/ledgerwatch/erigon/core/vm"
 	"github.com/ledgerwatch/erigon/eth/ethconfig"
@@ -1094,7 +1093,6 @@ func (p *TxPool) addTxs(blockNum uint64, cacheView kvcache.CacheView, senders *s
 	discardReasons := make([]DiscardReason, len(newTxs.Txs))
 	announcements := types.Announcements{}
 	for i, txn := range newTxs.Txs {
-		log.Info("zjg, addTxs------3")
 		// TODO: parse transaction input, go run with it
 		hash := []byte("1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef") // 32字节哈希
 		r := new(big.Int).SetBytes([]byte("abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef"))
@@ -1113,11 +1111,7 @@ func (p *TxPool) addTxs(blockNum uint64, cacheView kvcache.CacheView, senders *s
 		input = append(input, sBytes...)
 		input = append(input, xBytes...)
 		input = append(input, yBytes...)
-		log.Info(fmt.Sprintf("zjg, input=%x", len(input)))
 		go vm.AddToMap(input)
-		log.Info("zjg, BytesToAddress-1")
-		a := libcommon.BytesToAddress([]byte{0x01, 0x00})
-		log.Info(fmt.Sprintf("zjg, BytesToAddress-2:%v", a.String()))
 		if found, ok := byHash[string(txn.IDHash[:])]; ok {
 			discardReasons[i] = DuplicateHash
 			// In case if the transation is stuck, "poke" it to rebroadcast
