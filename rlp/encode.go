@@ -17,6 +17,7 @@
 package rlp
 
 import (
+	"bufio"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -70,13 +71,16 @@ func Encode(w io.Writer, val interface{}) error {
 		// Avoid copying by writing to the outer encbuf directly.
 		return outer.encode(val)
 	}
+	bufOut := bufio.NewWriter(w)
+	defer bufOut.Flush()
+
 	eb := encbufPool.Get().(*encbuf)
 	defer encbufPool.Put(eb)
 	eb.reset()
 	if err := eb.encode(val); err != nil {
 		return err
 	}
-	return eb.toWriter(w)
+	return eb.toWriter(bufOut)
 }
 
 func Write(w io.Writer, val []byte) error {

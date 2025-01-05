@@ -2,6 +2,7 @@ package stages
 
 import (
 	"context"
+	"sync"
 
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/kv"
@@ -89,37 +90,74 @@ func extractTransactionsFromSlot(slot *types2.TxsRlp, currentHeight uint64, cfg 
 	ids := make([]common.Hash, 0, len(slot.TxIds))
 	transactions := make([]types.Transaction, 0, len(slot.Txs))
 	toRemove := make([]common.Hash, 0)
+
 	signer := types.MakeSigner(cfg.chainConfig, currentHeight, 0)
-	cryptoContext := secp256k1.ContextForThread(1)
-	for idx, txBytes := range slot.Txs {
-		transaction, err := types.DecodeTransaction(txBytes)
-		if err == io.EOF {
-			continue
-		}
-		if err != nil {
-			// we have a transaction that cannot be decoded or a similar issue.  We don't want to handle
-			// this tx so just WARN about it and remove it from the pool and continue
-			log.Warn("[extractTransaction] Failed to decode transaction from pool, skipping and removing from pool",
-				"error", err,
-				"id", slot.TxIds[idx])
-			toRemove = append(toRemove, slot.TxIds[idx])
-			continue
-		}
 
-		// now attempt to recover the sender
-		sender, err := signer.SenderWithContext(cryptoContext, transaction)
-		if err != nil {
-			log.Warn("[extractTransaction] Failed to recover sender from transaction, skipping and removing from pool",
-				"error", err,
-				"hash", transaction.Hash())
-			toRemove = append(toRemove, slot.TxIds[idx])
-			continue
-		}
-
-		transaction.SetSender(sender)
-		transactions = append(transactions, transaction)
-		ids = append(ids, slot.TxIds[idx])
+	type result struct {
+		index       int
+		transaction types.Transaction
+		id          common.Hash
+		toRemove    bool
+		err         error
 	}
+
+	results := make([]*result, len(slot.Txs))
+	var wg sync.WaitGroup
+
+	for idx, txBytes := range slot.Txs {
+		wg.Add(1)
+		go func(idx int, txBytes []byte) {
+			defer wg.Done()
+
+			cryptoContext := secp256k1.ContextForThread(1)
+
+			res := &result{index: idx}
+
+			transaction, err := types.DecodeTransaction(txBytes)
+			if err == io.EOF {
+				res.toRemove = true
+				results[idx] = res
+				return
+			}
+			if err != nil {
+				res.toRemove = true
+				res.id = slot.TxIds[idx]
+				res.err = err
+				results[idx] = res
+				return
+			}
+
+			sender, err := signer.SenderWithContext(cryptoContext, transaction)
+			if err != nil {
+				res.toRemove = true
+				res.id = slot.TxIds[idx]
+				res.err = err
+				results[idx] = res
+				return
+			}
+
+			transaction.SetSender(sender)
+			res.transaction = transaction
+			res.id = slot.TxIds[idx]
+			results[idx] = res
+		}(idx, txBytes)
+	}
+
+	wg.Wait()
+
+	for _, res := range results {
+		if res.toRemove {
+			toRemove = append(toRemove, res.id)
+			if res.err != nil {
+				log.Warn("[extractTransaction] Failed to process transaction",
+					"error", res.err, "id", res.id)
+			}
+			continue
+		}
+		transactions = append(transactions, res.transaction)
+		ids = append(ids, res.id)
+	}
+
 	return transactions, ids, toRemove, nil
 }
 
