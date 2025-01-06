@@ -90,17 +90,10 @@ SettlementBackend = "l1"
 AggLayerTxTimeout = "5m"
 AggLayerURL = ""
 SyncModeOnlyEnabled = false
+DBPath = "/tmp/cdk/aggregator.sqlite"
 	[Aggregator.SequencerPrivateKey]
 		Path = "/pk/sequencer.keystore"
 		Password = "testonly"
-	[Aggregator.DB]
-		Name = "aggregator_db"
-		User = "aggregator_user"
-		Password = "aggregator_password"
-		Host = "xlayer-agg-db"
-		Port = "5432"
-		EnableLog = false	
-		MaxConns = 200
 	[Aggregator.Log]
 		Environment = "development" # "production" or "development"
 		Level = "info"

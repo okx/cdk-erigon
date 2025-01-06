@@ -19,7 +19,7 @@ services:
 
   xlayer-seqs:
     container_name: xlayer-seqs
-    image: zjg555543/cdk:v0.4.0-beta10
+    image: zjg555543/cdk:dev-v0.5.0-beta6
     volumes:
       - ./data/seqs:/tmp/cdk
       - ./keystore/da.permit.keystore:/pk/da.permit.keystore
@@ -33,7 +33,7 @@ services:
 
   xlayer-agg:
     container_name: xlayer-agg
-    image: zjg555543/cdk:v0.4.0-beta10
+    image: zjg555543/cdk:dev-v0.5.0-beta6
     ports:
       - 50081:50081
     volumes:
@@ -45,32 +45,6 @@ services:
       - "/bin/sh"
       - "-c"
       - "/usr/local/bin/cdk-node run --cfg /app/config.toml --custom-network-file /app/genesis.json  --components aggregator"
-
-  xlayer-agg-db:
-    container_name: xlayer-agg-db
-    image: postgres:15
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-        reservations:
-          memory: 1G
-    ports:
-      - 5434:5432
-    environment:
-      - POSTGRES_USER=aggregator_user
-      - POSTGRES_PASSWORD=aggregator_password
-      - POSTGRES_DB=aggregator_db
-    command:
-      - "postgres"
-      - "-N"
-      - "500"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aggregator_user -d aggregator_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
 
   xlayer-prover:
     container_name: xlayer-prover
