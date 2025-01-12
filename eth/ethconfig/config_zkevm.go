@@ -11,6 +11,7 @@ type Zk struct {
 	L2ChainId                              uint64
 	L2RpcUrl                               string
 	L2DataStreamerUrl                      string
+	L2DataStreamerMaxEntryChan             uint64
 	L2DataStreamerTimeout                  time.Duration
 	L2ShortCircuitToVerifiedBatch          bool
 	L1SyncStartBlock                       uint64
@@ -90,7 +91,7 @@ type Zk struct {
 
 	// For X Layer
 	XLayer XLayerConfig
-	
+
 	InitialBatchCfgFile            string
 	ACLPrintHistory                int
 	InfoTreeUpdateInterval         time.Duration

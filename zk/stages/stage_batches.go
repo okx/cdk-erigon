@@ -60,6 +60,7 @@ type HermezDb interface {
 
 type DatastreamClient interface {
 	RenewEntryChannel()
+	RenewMaxEntryChannel()
 	ReadAllEntriesToChannel() error
 	StopReadingToChannel()
 	GetEntryChan() *chan interface{}
@@ -281,7 +282,7 @@ func SpawnStageBatches(
 	// start routine to download blocks and push them in a channel
 	errorChan := make(chan struct{})
 	dsClientRunner := NewDatastreamClientRunner(dsQueryClient, logPrefix)
-	dsClientRunner.StartRead(errorChan)
+	dsClientRunner.StartRead(errorChan, highestDSL2Block-stageProgressBlockNo)
 	defer dsClientRunner.StopRead()
 
 	entryChan := dsQueryClient.GetEntryChan()
@@ -848,5 +849,5 @@ func getHighestDSL2Block(ctx context.Context, batchCfg BatchesCfg, latestFork ui
 
 func buildNewStreamClient(ctx context.Context, batchesCfg BatchesCfg, latestFork uint16) *client.StreamClient {
 	cfg := batchesCfg.zkCfg
-	return client.NewClient(ctx, cfg.L2DataStreamerUrl, cfg.DatastreamVersion, cfg.L2DataStreamerTimeout, latestFork)
+	return client.NewClient(ctx, cfg.L2DataStreamerUrl, cfg.DatastreamVersion, cfg.L2DataStreamerTimeout, latestFork, client.DefaultEntryChannelSize)
 }

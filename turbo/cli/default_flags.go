@@ -176,6 +176,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.L2ChainIdFlag,
 	&utils.L2RpcUrlFlag,
 	&utils.L2DataStreamerUrlFlag,
+	&utils.L2DataStreamerMaxEntryChanFlag,
 	&utils.L2DataStreamerTimeout,
 	&utils.L2ShortCircuitToVerifiedBatchFlag,
 	&utils.L1SyncStartBlock,
@@ -287,7 +288,6 @@ var DefaultFlags = []cli.Flag{
 	&utils.BadBatches,
 	&utils.InitialBatchCfgFile,
 
-
 	// X Layer Flags
 	&utils.AllowInternalTransactions,
 	&utils.TxPoolPackBatchSpecialList,
@@ -326,7 +326,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.TxPoolFreeGasLimit,
 	&utils.HTTPApiKeysFlag,
 	&utils.MethodRateLimitFlag,
-	
+
 	&utils.ACLPrintHistory,
 	&utils.InfoTreeUpdateInterval,
 	&utils.SealBatchImmediatelyOnOverflow,

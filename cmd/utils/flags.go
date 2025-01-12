@@ -415,6 +415,11 @@ var (
 		Usage: "L2 datastreamer endpoint",
 		Value: "",
 	}
+	L2DataStreamerMaxEntryChanFlag = cli.Uint64Flag{
+		Name:  "zkevm.l2-datastreamer-max-entrychan",
+		Usage: "L2 datastreamer max entry channel size",
+		Value: 1000000,
+	}
 	L2DataStreamerTimeout = cli.StringFlag{
 		Name:  "zkevm.l2-datastreamer-timeout",
 		Usage: "The time to wait for data to arrive from the stream before reporting an error (0s doesn't check)",
@@ -1945,7 +1950,7 @@ func setTxPool(ctx *cli.Context, fullCfg *ethconfig.Config) {
 
 	// For X Layer
 	setTxPoolXLayer(ctx, cfg)
-	
+
 	purgeEvery := ctx.Duration(TxpoolPurgeEveryFlag.Name)
 	purgeDistance := ctx.Duration(TxpoolPurgeDistanceFlag.Name)
 
