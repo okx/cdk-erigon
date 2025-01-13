@@ -426,10 +426,6 @@ func sequencingBatchStep(
 					backupDataSizeChecker := *blockDataSizeChecker
 					receipt, execResult, anyOverflow, err := attemptAddTransaction(cfg, sdb, ibs, batchCounters, &blockContext, header, transaction, effectiveGas, batchState.isL1Recovery(), batchState.forkId, l1TreeUpdateIndex, &backupDataSizeChecker)
 					if err != nil {
-						// For X Layer
-						metrics.GetLogStatistics().CumulativeCounting(metrics.FailTxCounter)
-						metrics.SeqFailTxCount.Inc()
-
 						if batchState.isLimboRecovery() {
 							panic("limbo transaction has already been executed once so they must not fail while re-executing")
 						}
