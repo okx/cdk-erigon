@@ -1,9 +1,13 @@
 package jsonrpc
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+
+	jsoniter "github.com/json-iterator/go"
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon/eth/stagedsync/stages"
@@ -17,6 +21,22 @@ import (
 
 // GetInternalTransactions ...
 func (api *APIImpl) GetInternalTransactions(ctx context.Context, txnHash libcommon.Hash) ([]*zktypes.InnerTx, error) {
+	if api.EnableInnerTxByTracer {
+		var buf bytes.Buffer
+		stream := jsoniter.NewStream(jsoniter.ConfigDefault, &buf, 4096)
+		err := api.getInternalTransactionsByTracer(ctx, txnHash, stream)
+		if err != nil {
+			return nil, fmt.Errorf("getInternalTransactionsByTracer failed: %w", err)
+		}
+		var innerTxs = make([]*zktypes.InnerTx, 0)
+		err = json.Unmarshal(buf.Bytes(), &innerTxs)
+		if err != nil {
+			return nil, fmt.Errorf("json.Unmarshal failed: %w", err)
+		}
+		log.Info("GetInternalTransactions", "tx hash", txnHash, "inner txs count", len(innerTxs))
+
+		return innerTxs, nil
+	}
 	if !api.EnableInnerTx {
 		return nil, errors.New("unsupported internal transaction method")
 	}

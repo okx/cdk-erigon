@@ -2,9 +2,10 @@ package utils
 
 import (
 	"fmt"
-	"github.com/urfave/cli/v2"
 	"math/big"
 	"time"
+
+	"github.com/urfave/cli/v2"
 
 	libcommon "github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon/eth/ethconfig"
@@ -178,6 +179,11 @@ var (
 	AllowInternalTransactions = cli.BoolFlag{
 		Name:  "zkevm.allow-internal-transactions",
 		Usage: "Allow the sequencer to proceed internal transactions",
+		Value: false,
+	}
+	AllowInternalTransactionsByTracer = cli.BoolFlag{
+		Name:  "zkevm.allow-internal-transactions-tracer",
+		Usage: "Allow the RPC to get internal transactions by tracer",
 		Value: false,
 	}
 	// RPC

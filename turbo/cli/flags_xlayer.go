@@ -23,6 +23,7 @@ func ApplyFlagsForEthXLayerConfig(ctx *cli.Context, cfg *ethconfig.Config) {
 			ExternalListenAddr: ctx.String(utils.NacosExternalListenAddrFlag.Name),
 		},
 		EnableInnerTx:               ctx.Bool(utils.AllowInternalTransactions.Name),
+		EnableInnerTxByTracer:       ctx.Bool(utils.AllowInternalTransactionsByTracer.Name),
 		SequencerBatchSleepDuration: ctx.Duration(utils.SequencerBatchSleepDuration.Name),
 	}
 

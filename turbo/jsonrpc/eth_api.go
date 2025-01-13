@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/ledgerwatch/erigon/zk/sequencer"
 	"math/big"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/ledgerwatch/erigon/zk/sequencer"
 
 	"github.com/ledgerwatch/erigon-lib/common/hexutil"
 
@@ -379,8 +380,9 @@ type APIImpl struct {
 	VirtualCountersSmtReduction float64
 
 	// For X Layer
-	L2GasPricer   gasprice.L2GasPricer
-	EnableInnerTx bool
+	L2GasPricer           gasprice.L2GasPricer
+	EnableInnerTx         bool
+	EnableInnerTxByTracer bool
 }
 
 // NewEthAPI returns APIImpl instance
@@ -414,8 +416,9 @@ func NewEthAPI(base *BaseAPI, db kv.RoDB, eth rpchelper.ApiBackend, txPool txpoo
 		logger:                      logger,
 		VirtualCountersSmtReduction: ethCfg.VirtualCountersSmtReduction,
 		// For X Layer
-		L2GasPricer:   gasprice.NewL2GasPriceSuggester(context.Background(), ethCfg.GPO),
-		EnableInnerTx: ethCfg.XLayer.EnableInnerTx,
+		L2GasPricer:           gasprice.NewL2GasPriceSuggester(context.Background(), ethCfg.GPO),
+		EnableInnerTx:         ethCfg.XLayer.EnableInnerTx,
+		EnableInnerTxByTracer: ethCfg.XLayer.EnableInnerTxByTracer,
 	}
 
 	// For X Layer

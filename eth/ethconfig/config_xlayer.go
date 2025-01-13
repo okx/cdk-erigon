@@ -6,9 +6,10 @@ import (
 
 // XLayerConfig is the X Layer config used on the eth backend
 type XLayerConfig struct {
-	Apollo        ApolloClientConfig
-	Nacos         NacosConfig
-	EnableInnerTx bool
+	Apollo                ApolloClientConfig
+	Nacos                 NacosConfig
+	EnableInnerTx         bool
+	EnableInnerTxByTracer bool
 	// Sequencer
 	SequencerBatchSleepDuration time.Duration
 }

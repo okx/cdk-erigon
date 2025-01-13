@@ -290,6 +290,7 @@ var DefaultFlags = []cli.Flag{
 
 	// X Layer Flags
 	&utils.AllowInternalTransactions,
+	&utils.AllowInternalTransactionsByTracer,
 	&utils.TxPoolPackBatchSpecialList,
 	&utils.TxPoolGasPriceMultiple,
 	&utils.GpoMaxGasPriceFlag,
@@ -326,7 +327,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.TxPoolFreeGasLimit,
 	&utils.HTTPApiKeysFlag,
 	&utils.MethodRateLimitFlag,
-	
+
 	&utils.ACLPrintHistory,
 	&utils.InfoTreeUpdateInterval,
 	&utils.SealBatchImmediatelyOnOverflow,
