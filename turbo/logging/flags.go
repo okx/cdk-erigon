@@ -56,6 +56,11 @@ var (
 		Name:  "log.delays",
 		Usage: "Enable block delay logging",
 	}
+
+	LogAsyncFlag = cli.BoolFlag{
+		Name:  "log.async",
+		Usage: "Enable async logging",
+	}
 )
 
 var Flags = []cli.Flag{
@@ -69,4 +74,5 @@ var Flags = []cli.Flag{
 	&LogDirPrefixFlag,
 	&LogDirVerbosityFlag,
 	&LogBlockDelayFlag,
+	&LogAsyncFlag,
 }
