@@ -63,6 +63,19 @@ type DeprecatedTxPoolConfig struct {
 	FreeGasCountPerAddr uint64
 	// FreeGasLimit is the max gas allowed use to do a free gas tx
 	FreeGasLimit uint64
+	// EnableFreeGasList enable the special project of XLayer for free gas
+	EnableFreeGasList bool
+	// FreeGasList project name to FreeGasInfo
+	FreeGasList []FreeGasInfo
+}
+
+// FreeGasInfo contains the details for what tx should be free
+type FreeGasInfo struct {
+	Name             string   `json:"name"`
+	FromList         []string `json:"from_list"`
+	ToList           []string `json:"to_list"`
+	MethodSigs       []string `json:"method_sigs"`
+	GasPriceMultiple uint64   `json:"gas_price_multiple"`
 }
 
 // DeprecatedDefaultTxPoolConfig contains the default configurations for the transaction
@@ -89,6 +102,7 @@ var DeprecatedDefaultTxPoolConfig = DeprecatedTxPoolConfig{
 	FreeGasExAddrs:       []string{},
 	FreeGasCountPerAddr:  3,
 	FreeGasLimit:         21000,
+	EnableFreeGasList:    false,
 }
 
 var DefaultTxPool2Config = func(fullCfg *Config) txpoolcfg.Config {

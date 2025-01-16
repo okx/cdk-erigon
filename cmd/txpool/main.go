@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/common/datadir"
 	"github.com/ledgerwatch/erigon-lib/direct"
@@ -59,7 +60,6 @@ var (
 
 	noTxGossip bool
 
-
 	// For X Layer
 	enableWhiteList      bool
 	whiteList            []string
@@ -70,7 +70,9 @@ var (
 	freeGasExAddrs       []string
 	freeGasCountPerAddr  uint64
 	freeGasLimit         uint64
-	
+	enableFreeGasList    bool
+	freeGasList          string
+
 	commitEvery   time.Duration
 	purgeEvery    time.Duration
 	purgeDistance time.Duration
@@ -113,6 +115,8 @@ func init() {
 	rootCmd.Flags().StringSliceVar(&freeGasExAddrs, utils.TxPoolFreeGasExAddrs.Name, ethconfig.DeprecatedDefaultTxPoolConfig.FreeGasExAddrs, utils.TxPoolFreeGasExAddrs.Usage)
 	rootCmd.PersistentFlags().Uint64Var(&freeGasCountPerAddr, utils.TxPoolFreeGasCountPerAddr.Name, ethconfig.DeprecatedDefaultTxPoolConfig.FreeGasCountPerAddr, utils.TxPoolFreeGasCountPerAddr.Usage)
 	rootCmd.PersistentFlags().Uint64Var(&freeGasLimit, utils.TxPoolFreeGasLimit.Name, ethconfig.DeprecatedDefaultTxPoolConfig.FreeGasLimit, utils.TxPoolFreeGasLimit.Usage)
+	rootCmd.Flags().BoolVar(&enableFreeGasList, utils.TxPoolEnableFreeGasList.Name, ethconfig.DeprecatedDefaultTxPoolConfig.EnableFreeGasList, utils.TxPoolEnableFreeGasList.Usage)
+	rootCmd.PersistentFlags().StringVar(&freeGasList, utils.TxPoolFreeGasList.Name, "", utils.TxPoolFreeGasList.Usage)
 }
 
 var rootCmd = &cobra.Command{
@@ -219,6 +223,12 @@ func doTxpool(ctx context.Context, logger log.Logger) error {
 	}
 	ethCfg.DeprecatedTxPool.FreeGasCountPerAddr = freeGasCountPerAddr
 	ethCfg.DeprecatedTxPool.FreeGasLimit = freeGasLimit
+	ethCfg.DeprecatedTxPool.EnableFreeGasList = enableFreeGasList
+	if len(freeGasList) > 0 {
+		if err := jsoniter.UnmarshalFromString(freeGasList, &ethCfg.DeprecatedTxPool.FreeGasList); err != nil {
+			panic("unable to unmarshal freeGasList:" + err.Error())
+		}
+	}
 
 	newTxs := make(chan types.Announcements, 1024)
 	defer close(newTxs)

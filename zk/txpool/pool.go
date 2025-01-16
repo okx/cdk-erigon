@@ -380,7 +380,7 @@ func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, 
 		tracedSenders[common.BytesToAddress([]byte(sender))] = struct{}{}
 	}
 
-	return &TxPool{
+	tp := &TxPool{
 		lock:                    &sync.Mutex{},
 		byHash:                  map[string]*metaTx{},
 		isLocalLRU:              localsHistory,
@@ -415,9 +415,24 @@ func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, 
 			FreeGasExAddrs:       ethCfg.DeprecatedTxPool.FreeGasExAddrs,
 			FreeGasCountPerAddr:  ethCfg.DeprecatedTxPool.FreeGasCountPerAddr,
 			FreeGasLimit:         ethCfg.DeprecatedTxPool.FreeGasLimit,
-		},
+			EnableFreeGasList:    ethCfg.DeprecatedTxPool.EnableFreeGasList},
 		freeGasAddrs: map[string]bool{},
-	}, nil
+	}
+	tp.setFreeGasList(ethCfg.DeprecatedTxPool.FreeGasList)
+
+	return tp, nil
+}
+
+func (p *TxPool) setFreeGasList(freeGasList []ethconfig.FreeGasInfo) {
+	p.xlayerCfg.FreeGasFromNameMap = make(map[string]string)
+	p.xlayerCfg.FreeGasList = make(map[string]*ethconfig.FreeGasInfo, len(freeGasList))
+	for _, info := range freeGasList {
+		for _, from := range info.FromList {
+			p.xlayerCfg.FreeGasFromNameMap[from] = info.Name
+		}
+		infoCopy := info
+		p.xlayerCfg.FreeGasList[info.Name] = &infoCopy
+	}
 }
 
 func (p *TxPool) OnNewBlock(ctx context.Context, stateChanges *remote.StateChangeBatch, unwindTxs, minedTxs types.TxSlots, tx kv.Tx) error {
@@ -762,7 +777,8 @@ func (p *TxPool) validateTx(txn *types.TxSlot, isLocal bool, stateCache kvcache.
 	if p.gpCache != nil {
 		rgp = p.gpCache.GetLatestRawGP()
 	}
-	if !p.isFreeGasXLayer(txn.SenderID) && uint256.NewInt(rgp.Uint64()).Cmp(&txn.FeeCap) == 1 {
+	if !p.isFreeGasXLayer(txn.SenderID, txn) &&
+		uint256.NewInt(rgp.Uint64()).Cmp(&txn.FeeCap) == 1 {
 		if txn.Traced {
 			log.Info(fmt.Sprintf("TX TRACING: validateTx underpriced idHash=%x local=%t, feeCap=%d, cfg.MinFeeCap=%d", txn.IDHash, isLocal, txn.FeeCap, p.cfg.MinFeeCap))
 		}

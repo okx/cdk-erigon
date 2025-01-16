@@ -93,3 +93,5 @@ networkid: 195
 pprof: true
 pprof.port: 6060
 pprof.addr: 0.0.0.0
+txpool.enablefreegaslist : true
+txpool.freegaslist : '[{"name":"e2e", "from_list":["0x586CbC95eD16031d9EFdaeBaCF1C1d2Bc3ccaa78"], "to_list":["0xAD1D01007a56EE0A4FFD0488fb58fC6500Cb1fbE"], "method_sigs":["a9059cbb"], "gas_price_multiple": 1}]'
