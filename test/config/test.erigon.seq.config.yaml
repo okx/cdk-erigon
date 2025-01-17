@@ -93,3 +93,4 @@ networkid: 195
 pprof: true
 pprof.port: 6060
 pprof.addr: 0.0.0.0
+yieldsize: 10
