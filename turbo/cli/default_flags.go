@@ -287,7 +287,6 @@ var DefaultFlags = []cli.Flag{
 	&utils.BadBatches,
 	&utils.InitialBatchCfgFile,
 
-
 	// X Layer Flags
 	&utils.AllowInternalTransactions,
 	&utils.TxPoolPackBatchSpecialList,
@@ -326,7 +325,7 @@ var DefaultFlags = []cli.Flag{
 	&utils.TxPoolFreeGasLimit,
 	&utils.HTTPApiKeysFlag,
 	&utils.MethodRateLimitFlag,
-	
+
 	&utils.ACLPrintHistory,
 	&utils.InfoTreeUpdateInterval,
 	&utils.SealBatchImmediatelyOnOverflow,
@@ -334,4 +333,5 @@ var DefaultFlags = []cli.Flag{
 	&utils.WitnessCacheEnable,
 	&utils.WitnessCacheLimit,
 	&utils.WitnessContractInclusion,
+	&utils.PreRunAddressList,
 }

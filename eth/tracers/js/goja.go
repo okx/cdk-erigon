@@ -501,7 +501,7 @@ func (t *jsTracer) setTypeConverters() error {
 	// NOTE: We need this workaround to create JS buffers because
 	// goja doesn't at the moment expose constructors for typed arrays.
 	//
-	// Cache uint8ArrayType once to be used every time for less overhead.
+	// PrecompiledCache uint8ArrayType once to be used every time for less overhead.
 	uint8ArrayType := t.vm.Get("Uint8Array")
 	toBufWrapper := func(vm *goja.Runtime, val []byte) (goja.Value, error) {
 		return toBuf(vm, uint8ArrayType, val)
